@@ -2,6 +2,7 @@ import pickle
 import pandas as pd
 import matplotlib.pyplot as plt
 from functools import lru_cache
+from datasets import load_from_disk
 
 
 @lru_cache(10_000)
@@ -9,20 +10,17 @@ def convert_date_to_period(date, freq):
     return pd.Period(date, freq)
 
 
-def load_data(train=True):
-    """
-    Load binary datasets into their dictionary
-    Args:
-      train (bool) - load training dataset toggle (default: True)
-    """
-    if train:
-        loc = "./price_predictions/train/train_data.pickle"
-    else:
-        loc = "./price_predictions/test/test_data.pickle"
+def transform_start_field(batch, freq):
+    batch["start"] = [convert_date_to_period(date[0], freq) for date in batch["start"]]
+    return batch
 
-    with open(loc, "rb") as f:
-        data = pickle.load(f)
-        return data
+
+def load_data(path="./data"):
+    # load and return dataset from the path above
+    try:
+        return load_from_disk("./data")
+    except Exception as e:
+        raise ValueError(f"Unable to load dataset from disk: {e}")
 
 
 def plot_10_price(dict_dfs, keys_to_plot, figheight=8, figwidth=36):
