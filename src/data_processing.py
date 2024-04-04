@@ -25,8 +25,11 @@ from gluonts.transform import (
 
 from transformers import PretrainedConfig
 from gluonts.transform.sampler import InstanceSampler
+
+# from gluonts.transform.convert import Dim
 from typing import Optional
 import numpy as np
+import pandas as pd
 
 
 def create_data_transformation(
@@ -109,6 +112,7 @@ def create_data_transformation(
                 input_fields=[
                     FieldName.FEAT_TIME,
                     FieldName.FEAT_AGE,
+                    FieldName.FEAT_DYNAMIC_REAL,
                 ],
             ),
             # Step 9: rename fields for HFTransformer

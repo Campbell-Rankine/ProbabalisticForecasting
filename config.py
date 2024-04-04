@@ -13,3 +13,9 @@ model_config = {
     "decoder_layers": 4,
     "d_model": 32,
 }
+
+hyperparams = {
+    "betas": (0.9, 0.95),
+    "lr": 6e-4,
+    "weight_decay": 1e-1,
+}

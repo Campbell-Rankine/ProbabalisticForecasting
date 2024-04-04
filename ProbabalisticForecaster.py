@@ -11,6 +11,9 @@ import torch.nn as nn
 from gluonts.time_feature import get_lags_for_frequency
 from gluonts.time_feature import time_features_from_frequency_str
 from transformers import TimeSeriesTransformerConfig, TimeSeriesTransformerForPrediction
+import os
+
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 
 def args_handler(fn: callable, data: dict):
@@ -77,10 +80,41 @@ class ProbForecaster(nn.Module):
 
         self.transformer = TimeSeriesTransformerForPrediction(self.config)
 
-        if verbose:
-            print("Model Architecture")
-            print("-------------------")
-            print(self.transformer)
+    def initialize_transformer_weights(self):
+        raise NotImplementedError
+
+    def forward(self, args, num_iter, batch_size):
+        """
+        Wrapper function for the transformer funcion. Includes basic batch data preprocessing in Torch
+        Args:
+            Args - (dict[torch.Tensor]): Forward arguments for the transformer model.
+        """
+        # pre process masks to LongTensor as otherwise they cannot be used to index missing values
+        args["past_observed_mask"] = args["past_observed_mask"].to(T.long)
+        args["future_observed_mask"] = args["future_observed_mask"].to(T.long)
+
+        # get batch size and correct indices
+        start = num_iter * batch_size
+        end = start + batch_size
+        if end > self.cardinality:
+            end = self.cardinality
+
+        # preprocess static categorical by applying mask to the feature
+        args["static_categorical_features"] = args["static_categorical_features"][0]
+        args["static_categorical_features"] = args["static_categorical_features"][
+            start:end
+        ]
+
+        return self.transformer(**args)
+
+    def parameters(self):
+        return self.transformer.parameters()
+
+    def train(self):
+        return self.transformer.train()
+
+    def eval(self):
+        return self.transformer.eval()
 
     def _verify_data_args(
         self,

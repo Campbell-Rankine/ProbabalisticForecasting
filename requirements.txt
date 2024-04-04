@@ -4,3 +4,5 @@ transformers
 datasets
 accelerate
 ujson
+tensorboard
+pytorch==2.2.2

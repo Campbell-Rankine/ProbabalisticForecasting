@@ -35,8 +35,7 @@ one_year = (
     str(int(date.split("-")[0]) - 1)
     + "-"
     + date.split("-")[1]
-    + "-"
-    + str(int(date.split("-")[2]) - 1)
+    + str(int(date.split("-")[2]) - 3)
 )
 
 save_loc = "./train/train_data.pickle"
@@ -100,8 +99,10 @@ def flatten_stocks(data: dict):
 
     # add dim
     for key, val in return_dict.items():
-        return_dict[key] = np.array(val).reshape(-1, 1)
 
+        return_dict[key] = np.nan_to_num(val, 0.0)
+        return_dict[key] = return_dict[key].reshape(1, -1)
+        print(return_dict[key].shape)
     return return_dict
 
 

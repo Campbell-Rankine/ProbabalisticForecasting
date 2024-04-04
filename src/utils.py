@@ -52,3 +52,9 @@ def plot_10_price(dict_dfs, keys_to_plot, figheight=8, figwidth=36):
         data = dict_dfs[keys_to_plot[idx]]["close"]
 
         axis.plot(range(len(data)), data, colours[idx])
+
+
+def send_args_to_device(args: dict, device):
+    for key, val in args.items():
+        args[key] = val.to(device)
+    return args

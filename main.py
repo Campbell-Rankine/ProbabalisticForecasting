@@ -2,7 +2,7 @@ import torch as T
 import argparse
 import logging
 from functools import partial
-
+import numpy as np
 
 from ProbabalisticForecaster import ProbForecaster
 from src.utils import load_data, transform_start_field
@@ -11,6 +11,7 @@ from src.dataloaders import (
     create_train_dataloader,
     create_test_dataloader,
 )
+from train.train import *
 
 
 logger = logging.getLogger()
@@ -110,7 +111,7 @@ def main(args: argparse.Namespace):
         "context_length": args.context,
         "freq": args.freq,
         "categorical": 1,
-        "cardinality": train.num_rows,
+        "cardinality": 112739,
         "dynamic_real": 4,
     }
 
@@ -118,7 +119,7 @@ def main(args: argparse.Namespace):
         "embedding_dim": 2,
         "encoder_layers": 4,
         "decoder_layers": 4,
-        "d_model": 32,
+        "d_model": 64,
     }
 
     if args.verbose:
@@ -126,7 +127,7 @@ def main(args: argparse.Namespace):
             data_params=data_params,
             transformer_params=model_params,
             verbose=True,
-            logger=logger,
+            logger=logging.getLogger(),
         )
     else:
         model = ProbForecaster(
@@ -142,19 +143,28 @@ def main(args: argparse.Namespace):
         freq=args.freq,
         data=train,
         batch_size=args.batch,
-        num_batches_per_epoch=3,
+        num_batches_per_epoch=20,
     )
 
     test_dl = create_test_dataloader(
         config=model.config,
         freq=args.freq,
         data=test,
-        batch_size=64,
+        batch_size=args.batch,
     )
 
-    # test first batch
-    batch = next(iter(train_dl))
-    print(batch)
+    print("")
+
+    if args.verbose:
+        train_model(
+            model,
+            train_dl,
+            use_tb=True,
+            logger=logging.getLogger(),
+            batch_size=args.batch,
+        )
+    else:
+        train_model(model, train_dl, use_tb=True, batch_size=args.batch)
 
 
 if __name__ == "__main__":
