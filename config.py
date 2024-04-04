@@ -9,13 +9,13 @@ model_config = {
     "cardinality": -1,  # Set this on input
     "embedding_dimension": [2],
     # Transformer params
-    "encoder_layers": 4,
-    "decoder_layers": 4,
-    "d_model": 32,
+    "encoder_layers": 8,
+    "decoder_layers": 8,
+    "d_model": 64,
 }
 
 hyperparams = {
-    "betas": (0.9, 0.95),
-    "lr": 6e-4,
-    "weight_decay": 1e-1,
+    "betas": (0.95, 0.99),
+    "lr": 0.001,
+    "weight_decay": 1e-2,
 }

@@ -119,7 +119,7 @@ def main(args: argparse.Namespace):
         "embedding_dim": 2,
         "encoder_layers": 4,
         "decoder_layers": 4,
-        "d_model": 64,
+        "d_model": 128,
     }
 
     if args.verbose:
@@ -143,7 +143,7 @@ def main(args: argparse.Namespace):
         freq=args.freq,
         data=train,
         batch_size=args.batch,
-        num_batches_per_epoch=20,
+        num_batches_per_epoch=58,
     )
 
     test_dl = create_test_dataloader(
