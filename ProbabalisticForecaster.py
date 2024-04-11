@@ -83,7 +83,7 @@ class ProbForecaster(nn.Module):
     def initialize_transformer_weights(self):
         raise NotImplementedError
 
-    def forward(self, args, num_iter, batch_size):
+    def forward(self, args, num_iter, batch_size, test=False):
         """
         Wrapper function for the transformer funcion. Includes basic batch data preprocessing in Torch
         Args:
@@ -104,8 +104,10 @@ class ProbForecaster(nn.Module):
         args["static_categorical_features"] = args["static_categorical_features"][
             start:end
         ]
-
-        return self.transformer(**args)
+        if not test:
+            return self.transformer(**args)
+        else:
+            return self.transformer.generate(**args)
 
     def parameters(self):
         return self.transformer.parameters()
@@ -115,6 +117,17 @@ class ProbForecaster(nn.Module):
 
     def eval(self):
         return self.transformer.eval()
+
+    def get_grad_norm(self):
+        total_norm = 0.0
+        for p in self.transformer.parameters():
+            try:
+                param_norm = p.grad.detach().data.norm(2)
+                total_norm += param_norm.item() ** 2
+            except:
+                continue
+
+        return total_norm**0.5
 
     def _verify_data_args(
         self,

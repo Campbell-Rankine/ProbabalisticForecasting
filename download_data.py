@@ -35,7 +35,8 @@ one_year = (
     str(int(date.split("-")[0]) - 1)
     + "-"
     + date.split("-")[1]
-    + str(int(date.split("-")[2]) - 3)
+    + "-"
+    + str(int(date.split("-")[2]) - 2)
 )
 
 save_loc = "./train/train_data.pickle"
@@ -111,11 +112,11 @@ if __name__ == "__main__":
     print(one_year)
 
     tickers = yf.tickers_nasdaq()
-    inds = np.random.uniform(0.0, len(tickers), 675)
+    inds = np.random.uniform(0.0, len(tickers), 650)
     inds = [int(x) for x in inds]
     tickers = [tickers[ind] for ind in inds]  # Debug flag application
 
-    print(f"Downloading {len(tickers)} tickers")
+    print(f"Downloading {len(tickers)} tickers from date: {one_year}")
 
     download_start = timer()
     with ProcessPoolExecutor(max_workers=workers) as executor:
@@ -125,8 +126,8 @@ if __name__ == "__main__":
     list_dfs = list(filter(lambda item: item is not None, list_dfs))
 
     # Train test inf splitting
-    train = list_dfs[:500]
-    test = list_dfs[500:600]
+    train = list_dfs[:550]
+    test = list_dfs[550:]
 
     download_end = timer()
     print(f"Downloading ticker data took: {round(download_end - download_start, 2)} s")

@@ -10,7 +10,11 @@ today = datetime.now().strftime("%Y-%m-%d")
 
 
 def save_model_params(
-    model: ProbForecaster, optimizer: T.optim.AdamW, losses: list, epoch: int
+    model: ProbForecaster,
+    optimizer: T.optim.AdamW,
+    losses: list,
+    epoch: int,
+    scheduler: T.optim.lr_scheduler.ExponentialLR,
 ):
     """
     Save full training run including losses, optimizer etc.
@@ -21,5 +25,6 @@ def save_model_params(
         "loss": losses,
         "optimizer_state_dict": optimizer.state_dict(),
         "model_state_dict": model.state_dict(),
+        "sched_state_dict": scheduler.state_dict(),
     }
     T.save(to_save, f"{save_loc}/Forecaster-{today}.pth")

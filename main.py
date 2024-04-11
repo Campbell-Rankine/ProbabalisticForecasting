@@ -111,15 +111,15 @@ def main(args: argparse.Namespace):
         "context_length": args.context,
         "freq": args.freq,
         "categorical": 1,
-        "cardinality": 112739,
+        "cardinality": 125479,
         "dynamic_real": 4,
     }
 
     model_params = {
         "embedding_dim": 2,
-        "encoder_layers": 4,
-        "decoder_layers": 4,
-        "d_model": 128,
+        "encoder_layers": 8,
+        "decoder_layers": 8,
+        "d_model": 256,
     }
 
     if args.verbose:
@@ -143,7 +143,7 @@ def main(args: argparse.Namespace):
         freq=args.freq,
         data=train,
         batch_size=args.batch,
-        num_batches_per_epoch=58,
+        num_batches_per_epoch=128,  # run through each
     )
 
     test_dl = create_test_dataloader(
@@ -159,12 +159,13 @@ def main(args: argparse.Namespace):
         train_model(
             model,
             train_dl,
+            test_dl,
             use_tb=True,
             logger=logging.getLogger(),
             batch_size=args.batch,
         )
     else:
-        train_model(model, train_dl, use_tb=True, batch_size=args.batch)
+        train_model(model, train_dl, test_dl, use_tb=True, batch_size=args.batch)
 
 
 if __name__ == "__main__":
