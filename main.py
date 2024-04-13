@@ -12,7 +12,7 @@ from src.dataloaders import (
     create_test_dataloader,
 )
 from train.train import *
-
+from helper import parse_cli
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -23,75 +23,6 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 df_list = load_data()
-
-
-def parse_cli() -> argparse.Namespace:
-    # Parse command line arguments for script
-    parser = argparse.ArgumentParser()
-
-    ### - Global Params - ###
-    parser.add_argument(
-        "-freq",
-        "--freq",
-        dest="freq",
-        metavar="freq",
-        default="1D",
-        type=str,
-        help="Override frequency string",
-    )
-
-    parser.add_argument(
-        "-verbose",
-        "--verbose",
-        dest="verbose",
-        metavar="verbose",
-        default=True,
-        type=bool,
-        help="Toggle logging",
-    )
-
-    parser.add_argument(
-        "-pred",
-        "--pred",
-        dest="pred",
-        metavar="pred",
-        default=7,
-        type=int,
-        help="Override prediction length",
-    )
-
-    parser.add_argument(
-        "-con",
-        "--context",
-        dest="context",
-        metavar="context",
-        default=30,
-        type=int,
-        help="Override context length",
-    )
-
-    parser.add_argument(
-        "-batch",
-        "--batch",
-        dest="batch",
-        metavar="batch",
-        default=20,
-        type=int,
-        help="Override context length",
-    )
-
-    parser.add_argument(
-        "-test",
-        "--test",
-        dest="test",
-        metavar="test",
-        default=True,
-        type=bool,
-        help="Toggle testing inference",
-    )
-
-    args = parser.parse_args()
-    return args
 
 
 def main(args: argparse.Namespace):
@@ -111,12 +42,12 @@ def main(args: argparse.Namespace):
         "context_length": args.context,
         "freq": args.freq,
         "categorical": 1,
-        "cardinality": 125479,
+        "cardinality": 1016,
         "dynamic_real": 4,
     }
 
     model_params = {
-        "embedding_dim": 2,
+        "embedding_dim": 1,
         "encoder_layers": 8,
         "decoder_layers": 8,
         "d_model": 256,
@@ -143,14 +74,15 @@ def main(args: argparse.Namespace):
         freq=args.freq,
         data=train,
         batch_size=args.batch,
-        num_batches_per_epoch=128,  # run through each
+        num_batches_per_epoch=100,  # run through each
     )
 
-    test_dl = create_test_dataloader(
+    test_dl = create_train_dataloader(
         config=model.config,
         freq=args.freq,
         data=test,
         batch_size=args.batch,
+        num_batches_per_epoch=1,
     )
 
     print("")
@@ -163,6 +95,7 @@ def main(args: argparse.Namespace):
             use_tb=True,
             logger=logging.getLogger(),
             batch_size=args.batch,
+            use_test=False,
         )
     else:
         train_model(model, train_dl, test_dl, use_tb=True, batch_size=args.batch)

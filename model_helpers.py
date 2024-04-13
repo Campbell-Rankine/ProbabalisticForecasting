@@ -1,10 +1,12 @@
 import torch as T
 from datetime import datetime
-
+import os
 
 from ProbabalisticForecaster import ProbForecaster
 
 save_loc = "./weights"  # change if need be
+if not os.path.exists(save_loc):
+    os.mkdir(save_loc)
 
 today = datetime.now().strftime("%Y-%m-%d")
 

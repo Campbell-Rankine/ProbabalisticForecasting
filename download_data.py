@@ -15,6 +15,7 @@ import pickle
 import numpy as np
 from datasets import Dataset, DatasetDict
 from tqdm import tqdm
+from typing import Optional
 
 # logging
 import logging
@@ -59,7 +60,7 @@ def pull_ticker_data(ticker):
         return None
 
 
-def flatten_stocks(data: dict):
+def flatten_stocks(data: dict, limiter: Optional[int] = -1):
     """
     Flatten pricing data and add ID as categorical variable for time series data processing
     """
@@ -79,7 +80,6 @@ def flatten_stocks(data: dict):
     databar = tqdm(enumerate(data.items()))
     for idx, (stock, data_) in databar:
         databar.set_description(f"Building final return dictionary for: {stock}")
-
         return_dict["open"].extend(data_["open"])
         return_dict["high"].extend(data_["high"])
         return_dict["low"].extend(data_["low"])
@@ -103,7 +103,6 @@ def flatten_stocks(data: dict):
 
         return_dict[key] = np.nan_to_num(val, 0.0)
         return_dict[key] = return_dict[key].reshape(1, -1)
-        print(return_dict[key].shape)
     return return_dict
 
 
@@ -112,7 +111,7 @@ if __name__ == "__main__":
     print(one_year)
 
     tickers = yf.tickers_nasdaq()
-    inds = np.random.uniform(0.0, len(tickers), 650)
+    inds = np.random.uniform(0.0, len(tickers), 250)
     inds = [int(x) for x in inds]
     tickers = [tickers[ind] for ind in inds]  # Debug flag application
 
@@ -126,8 +125,8 @@ if __name__ == "__main__":
     list_dfs = list(filter(lambda item: item is not None, list_dfs))
 
     # Train test inf splitting
-    train = list_dfs[:550]
-    test = list_dfs[550:]
+    train = list_dfs[:200]
+    test = list_dfs[200:]
 
     download_end = timer()
     print(f"Downloading ticker data took: {round(download_end - download_start, 2)} s")

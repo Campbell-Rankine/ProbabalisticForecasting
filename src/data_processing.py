@@ -112,6 +112,8 @@ def create_data_transformation(
                 input_fields=[
                     FieldName.FEAT_TIME,
                     FieldName.FEAT_AGE,
+                ]
+                + [
                     FieldName.FEAT_DYNAMIC_REAL,
                 ],
             ),

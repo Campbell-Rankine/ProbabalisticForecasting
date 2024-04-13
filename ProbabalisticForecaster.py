@@ -13,24 +13,9 @@ from gluonts.time_feature import time_features_from_frequency_str
 from transformers import TimeSeriesTransformerConfig, TimeSeriesTransformerForPrediction
 import os
 
+from helper import logging_handler, args_handler
+
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
-
-
-def args_handler(fn: callable, data: dict):
-    try:
-        fn(**data)
-    except Exception as e:
-        raise ValueError(f"Unable to verify data arguments: {e}")
-
-
-def logging_handler(
-    verbose: bool, message: str, logger: Optional[logging.Logger] = None
-):
-    """
-    handle logging requirements for the forecaster
-    """
-    if verbose and (not logger is None):
-        logger.info(f"Forecaster Logging: {message}")
 
 
 class ProbForecaster(nn.Module):
@@ -91,8 +76,8 @@ class ProbForecaster(nn.Module):
         """
         # pre process masks to LongTensor as otherwise they cannot be used to index missing values
         args["past_observed_mask"] = args["past_observed_mask"].to(T.long)
-        args["future_observed_mask"] = args["future_observed_mask"].to(T.long)
-
+        if not test:
+            args["future_observed_mask"] = args["future_observed_mask"].to(T.long)
         # get batch size and correct indices
         start = num_iter * batch_size
         end = start + batch_size

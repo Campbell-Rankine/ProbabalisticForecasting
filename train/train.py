@@ -17,6 +17,7 @@ from src.utils import load_data, convert_date_to_period, send_args_to_device
 from ProbabalisticForecaster import ProbForecaster
 from config import model_config, hyperparams
 from model_helpers import save_model_params
+from src.plotting import gen_plot
 
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
@@ -40,11 +41,11 @@ def train_model(
     use_tb: Optional[bool] = False,
     use_test: Optional[bool] = False,
     logger: Optional[logging.Logger] = None,
-    epochs: Optional[int] = 70,
+    epochs: Optional[int] = 150,
     batch_size: Optional[int] = 64,
     num_batches_per_epoch: Optional[
         int
-    ] = 128,  # also set in main but if you change this just pass it to the
+    ] = 100,  # also set in main but if you change this just pass it to the
     logging_path: Optional[str] = "./logging",
 ):
     message = f"Initializing model training conditions \n --------------------------- \n Using Tensorboard: {use_tb} \n Using Test Data: {use_test} \n Learning Rate: {hyperparams['lr']} \n Weight Decay: {hyperparams['weight_decay']} \n Betas: {hyperparams['betas']}"
@@ -78,11 +79,10 @@ def train_model(
     if use_tb:
         tbwriter = SummaryWriter(logging_path)
 
-    last_test_loss = 0.0
-    test_losses = []
     for epoch_num in databar:
         losses = []
         for idx, batch in enumerate(train_dl):
+
             # zero the optim gradients
             optim.zero_grad()
 
@@ -130,13 +130,13 @@ def train_model(
         sched.step()
 
         # model to eval
-        if use_test and epoch_num % 5 == 0:
+        if use_test and epoch_num % 10 == 0:
             model.eval()
             optim.zero_grad()
 
             test_losses = []
             last_test_loss = 0.0
-            for idx, batch in test_dl:
+            for idx__, batch in enumerate(test_dl):
                 args = {
                     "past_values": batch["past_values"].to(device),
                     "past_time_features": batch["past_time_features"].to(device),
@@ -144,18 +144,15 @@ def train_model(
                     "static_categorical_features": batch[
                         "static_categorical_features"
                     ].to(device),
-                    "future_values": batch["future_values"].to(device),
                     "future_time_features": batch["future_time_features"].to(device),
-                    "future_observed_mask": batch["future_observed_mask"].to(device),
                     "output_hidden_states": True,
                 }
+                outputs = model(args, idx__, batch_size=batch_size, test=True)
 
-                outputs = model(args, idx, batch_size=batch_size)
-                loss = outputs.loss
-                test_losses.append(loss.item())
+                output = outputs.sequences.cpu().numpy()
 
-            last_test_loss = np.mean(test_losses)
-            tbwriter.add_scalar("Mean Test Loss", last_test_loss, (epoch_num + 1))
+                gen_plot(output, batch, epoch_num)
+                break
 
             model.train()
 
