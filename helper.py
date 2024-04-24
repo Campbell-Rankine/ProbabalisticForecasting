@@ -33,7 +33,7 @@ def parse_cli() -> argparse.Namespace:
         "--pred",
         dest="pred",
         metavar="pred",
-        default=21,
+        default=14,
         type=int,
         help="Override prediction length",
     )
@@ -43,7 +43,7 @@ def parse_cli() -> argparse.Namespace:
         "--context",
         dest="context",
         metavar="context",
-        default=60,
+        default=182,
         type=int,
         help="Override context length",
     )
@@ -53,7 +53,7 @@ def parse_cli() -> argparse.Namespace:
         "--batch",
         dest="batch",
         metavar="batch",
-        default=10,
+        default=7,
         type=int,
         help="Override context length",
     )

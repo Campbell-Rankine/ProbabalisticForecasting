@@ -19,7 +19,6 @@ from config import model_config, hyperparams
 from model_helpers import save_model_params
 from src.plotting import gen_plot
 
-os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 # globals
 accelerator = Accelerator()
@@ -41,14 +40,14 @@ def train_model(
     use_tb: Optional[bool] = False,
     use_test: Optional[bool] = False,
     logger: Optional[logging.Logger] = None,
-    epochs: Optional[int] = 150,
+    epochs: Optional[int] = 90,
     batch_size: Optional[int] = 64,
     num_batches_per_epoch: Optional[
         int
-    ] = 100,  # also set in main but if you change this just pass it to the
+    ] = 140,  # also set in main but if you change this just pass it to the
     logging_path: Optional[str] = "./logging",
 ):
-    message = f"Initializing model training conditions \n --------------------------- \n Using Tensorboard: {use_tb} \n Using Test Data: {use_test} \n Learning Rate: {hyperparams['lr']} \n Weight Decay: {hyperparams['weight_decay']} \n Betas: {hyperparams['betas']}"
+    message = f"Initializing model training conditions \n --------------------------- \n Using Tensorboard: {use_tb} \n Using Test Data: {use_test} \n Learning Rate: {hyperparams['lr']} \n Weight Decay: {hyperparams['weight_decay']} \n Betas: {hyperparams['betas']} \n Device: {device}"
     logging_handler(message, logger)
 
     if not os.path.exists(logging_path):
@@ -106,7 +105,7 @@ def train_model(
             losses.append(loss.item())
 
             databar.set_description(
-                f"Epoch: {epoch_num}, Iteration: {idx} / {num_batches_per_epoch} | {100*round(idx/num_batches_per_epoch, 2)}%, Loss: {loss}"
+                f"Epoch: {epoch_num}, Iteration: {idx} / {num_batches_per_epoch} | {round(100*(idx/num_batches_per_epoch), 2)}%, Loss: {loss}"
             )
 
             # backprop
@@ -137,6 +136,12 @@ def train_model(
             test_losses = []
             last_test_loss = 0.0
             for idx__, batch in enumerate(test_dl):
+                stddev_test = np.std(batch["past_values"].numpy()[:-60])
+                if stddev_test < 0.1:
+                    print(
+                        f"Skipping print as past_values only have variance of: {stddev_test}"
+                    )
+                    continue
                 args = {
                     "past_values": batch["past_values"].to(device),
                     "past_time_features": batch["past_time_features"].to(device),

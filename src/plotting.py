@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from typing import Optional
 import numpy as np
+import os
 
 
 def gen_plot(
@@ -8,21 +9,33 @@ def gen_plot(
 ):
 
     path = "./test/results"
-    for idx in range(outputs.shape[0]):
+
+    for idx, row in enumerate(batch["past_values"]):
+
+        # build plot
         fig, ax = plt.subplots()
         fig.set_figheight(figheight)
         fig.set_figwidth(figwidth)
 
-        past = batch["past_values"][idx][-(42 + 1) :]
-        future = batch["future_values"][idx]
+        # get correct save_loc
+        save_loc = path + f"/epoch-{epoch}"
+        if not os.path.exists(save_loc):
+            os.mkdir(save_loc)
 
-        # plot target variable
-        ax.plot(list(range(42 + 1)), past, label="past close", color="blue")
-        ax.plot(list(range(42, 42 + 21)), future, label="future close", color="red")
+        save_loc = save_loc + f"/stock-{idx}-epoch-{epoch}.png"
 
-        # plot prediction values
+        prediction_length = outputs[idx].shape[1]
+
+        ax.plot(list(range(30)), row[-30:], label="past close", color="blue")
+        ax.plot(
+            list(range(30, 30 + prediction_length)),
+            batch["future_values"][idx],
+            label="future close",
+            color="red",
+        )
+
         plt.plot(
-            list(range(42, 42 + 21)),
+            list(range(30, 30 + prediction_length)),
             np.median(outputs[idx], axis=0),
             label="Prediction median",
             color="green",
@@ -30,7 +43,7 @@ def gen_plot(
         )
 
         plt.fill_between(
-            list(range(42, 42 + 21)),
+            list(range(30, 30 + prediction_length)),
             outputs[idx].mean(0) - outputs[idx].std(axis=0),
             outputs[idx].mean(0) + outputs[idx].std(axis=0),
             color="orange",
@@ -40,4 +53,4 @@ def gen_plot(
         )
 
         plt.legend()
-        plt.savefig(f"{path}/batch_{idx}_epoch_{epoch}.png")
+        plt.savefig(save_loc)

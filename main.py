@@ -74,7 +74,7 @@ def main(args: argparse.Namespace):
         freq=args.freq,
         data=train,
         batch_size=args.batch,
-        num_batches_per_epoch=100,  # run through each
+        num_batches_per_epoch=140,  # run through each
     )
 
     test_dl = create_train_dataloader(
@@ -95,7 +95,7 @@ def main(args: argparse.Namespace):
             use_tb=True,
             logger=logging.getLogger(),
             batch_size=args.batch,
-            use_test=False,
+            use_test=True,
         )
     else:
         train_model(model, train_dl, test_dl, use_tb=True, batch_size=args.batch)
