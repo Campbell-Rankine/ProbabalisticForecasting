@@ -21,6 +21,7 @@ from gluonts.transform import (
     VstackFeatures,
     ConcatFeatures,
     RenameFields,
+    ExpandDimArray,
 )
 
 from transformers import PretrainedConfig
@@ -58,6 +59,8 @@ def create_data_transformation(
             + [AsNumpyArray(field="high", expected_ndim=1, dtype=np.float32)]
             + [AsNumpyArray(field="low", expected_ndim=1, dtype=np.float32)]
             + [AsNumpyArray(field="volume", expected_ndim=1, dtype=np.float32)]
+            + [AsNumpyArray(field="mu", expected_ndim=1, dtype=np.float32)]
+            + [AsNumpyArray(field="sigma", expected_ndim=1, dtype=np.float32)]
             + [
                 AsNumpyArray(
                     field=FieldName.TARGET,
@@ -100,12 +103,7 @@ def create_data_transformation(
             # Step 8: Vstack temporal features
             VstackFeatures(
                 output_field=FieldName.FEAT_DYNAMIC_REAL,
-                input_fields=[
-                    "open",
-                    "high",
-                    "low",
-                    "volume",
-                ],
+                input_fields=["open", "high", "low", "volume", "mu", "sigma"],
             ),
             VstackFeatures(
                 output_field=FieldName.FEAT_TIME,

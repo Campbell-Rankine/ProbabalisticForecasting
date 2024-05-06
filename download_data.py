@@ -53,6 +53,8 @@ def pull_ticker_data(ticker):
         if np.std(data["close"]) <= 0.5:
             return None
 
+        data["mu"] = np.mean(data["open"]) * np.ones_like(data["open"].to_numpy())
+        data["sigma"] = np.std(data["open"]) * np.ones_like(data["open"].to_numpy())
         data = data.to_dict(orient="list")
         return (ticker, data)
     except Exception as e:
@@ -74,6 +76,8 @@ def flatten_stocks(data: dict, limiter: Optional[int] = -1):
         "volume": [],
         "feat_static_cat": [],
         "start": [],
+        "mu": [],
+        "sigma": [],
     }
 
     # iterate over stocks
@@ -86,6 +90,8 @@ def flatten_stocks(data: dict, limiter: Optional[int] = -1):
         return_dict["target"].extend(data_["close"])
         return_dict["adjclose"].extend(data_["adjclose"])
         return_dict["volume"].extend(data_["volume"])
+        return_dict["mu"].extend(data_["mu"])
+        return_dict["sigma"].extend(data_["sigma"])
 
         id = []
         start = []

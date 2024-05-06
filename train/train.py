@@ -81,6 +81,10 @@ def train_model(
     for epoch_num in databar:
         losses = []
         for idx, batch in enumerate(train_dl):
+            # test batch. Comment out this code if not needed
+            # for k, v in batch.items():
+            #     print(k, v.shape, v.type())
+            # assert False
 
             # zero the optim gradients
             optim.zero_grad()

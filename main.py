@@ -48,8 +48,8 @@ def main(args: argparse.Namespace):
         "context_length": args.context,
         "freq": args.freq,
         "categorical": 1,
-        "cardinality": 1016,
-        "dynamic_real": 4,
+        "cardinality": 1247,
+        "dynamic_real": 6,
     }
 
     model_params = {
@@ -80,7 +80,7 @@ def main(args: argparse.Namespace):
         freq=args.freq,
         data=train,
         batch_size=args.batch,
-        num_batches_per_epoch=144,  # run through each
+        num_batches_per_epoch=140,  # run through each
     )
 
     test_dl = create_train_dataloader(

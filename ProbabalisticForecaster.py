@@ -173,6 +173,8 @@ class ProbForecaster(nn.Module):
             num_time_features=len(self.time_features) + 1,
             # we have a single static categorical feature, namely time series id:
             num_static_categorical_features=1,
+            # as per the original Lag-Llama paper we need to pass summary statistics to the model as well.
+            # num_static_real_features=2,
             # we have multiple fields with time series data so:
             num_dynamic_real_features=self.dynamic_real,
             # Number of rows:
