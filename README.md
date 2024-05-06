@@ -22,3 +22,17 @@ To see a full list of command line arguments use:
 ```sh
     python main.py --help
 ```
+
+### Tensorboard Logging
+
+If you wish to monitor the training run, in a different terminal cd to the ProbabilisticForecasting directory. Next run the following command:
+
+```sh
+    tensorboard --logdir="./logging"
+```
+
+Tensorboard logging is supported for the following:
+
+- Gradient Norm: Scalar value representing the size of the loss functions gradient. Useful to monitor vanishing/exploding gradients.
+- Epoch Loss: For all epochs in the training run, graph the loss at each training step
+- Mean Epoch loss: Useful to watch the tendencies of the loss over the epoch.
