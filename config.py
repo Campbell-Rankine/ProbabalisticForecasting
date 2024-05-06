@@ -11,7 +11,7 @@ model_config = {
     # Transformer params
     "encoder_layers": 10,
     "decoder_layers": 10,
-    "d_model": 128,
+    "d_model": 512,
     "output_filter": 3,
 }
 

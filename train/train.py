@@ -40,7 +40,7 @@ def train_model(
     use_tb: Optional[bool] = False,
     use_test: Optional[bool] = False,
     logger: Optional[logging.Logger] = None,
-    epochs: Optional[int] = 301,
+    epochs: Optional[int] = 251,
     batch_size: Optional[int] = 64,
     num_batches_per_epoch: Optional[
         int
