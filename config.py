@@ -12,10 +12,11 @@ model_config = {
     "encoder_layers": 8,
     "decoder_layers": 8,
     "d_model": 64,
+    "output_filter": 3,
 }
 
 hyperparams = {
-    "betas": (0.95, 0.99),
-    "lr": 0.1,
+    "betas": (0.9, 0.95),
+    "lr": 0.05,
     "weight_decay": 1e-2,
 }

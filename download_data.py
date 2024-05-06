@@ -50,7 +50,7 @@ def pull_ticker_data(ticker):
         data = data.drop(["ticker"], axis=1)
 
         logging.info(f"Downloading: {ticker}, Price Variance: {np.std(data['close'])}")
-        if np.std(data["close"]) == 0.0:
+        if np.std(data["close"]) <= 0.5:
             return None
 
         data = data.to_dict(orient="list")
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     print(one_year)
 
     tickers = yf.tickers_nasdaq()
-    inds = np.random.uniform(0.0, len(tickers), 250)
+    inds = np.random.uniform(0.0, len(tickers), 650)
     inds = [int(x) for x in inds]
     tickers = [tickers[ind] for ind in inds]  # Debug flag application
 
@@ -125,8 +125,8 @@ if __name__ == "__main__":
     list_dfs = list(filter(lambda item: item is not None, list_dfs))
 
     # Train test inf splitting
-    train = list_dfs[:200]
-    test = list_dfs[200:]
+    train = list_dfs[:450]
+    test = list_dfs[450:]
 
     download_end = timer()
     print(f"Downloading ticker data took: {round(download_end - download_start, 2)} s")

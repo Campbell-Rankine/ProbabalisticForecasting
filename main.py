@@ -24,6 +24,12 @@ logger.addHandler(ch)
 
 df_list = load_data()
 
+"""
+Project TODO:
+
+1) Add more features to time features. See Quantstats for the list.
+"""
+
 
 def main(args: argparse.Namespace):
     """
@@ -74,7 +80,7 @@ def main(args: argparse.Namespace):
         freq=args.freq,
         data=train,
         batch_size=args.batch,
-        num_batches_per_epoch=140,  # run through each
+        num_batches_per_epoch=144,  # run through each
     )
 
     test_dl = create_train_dataloader(
@@ -96,6 +102,7 @@ def main(args: argparse.Namespace):
             logger=logging.getLogger(),
             batch_size=args.batch,
             use_test=True,
+            num_batches_per_epoch=144,
         )
     else:
         train_model(model, train_dl, test_dl, use_tb=True, batch_size=args.batch)

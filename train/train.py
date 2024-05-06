@@ -40,7 +40,7 @@ def train_model(
     use_tb: Optional[bool] = False,
     use_test: Optional[bool] = False,
     logger: Optional[logging.Logger] = None,
-    epochs: Optional[int] = 90,
+    epochs: Optional[int] = 301,
     batch_size: Optional[int] = 64,
     num_batches_per_epoch: Optional[
         int
@@ -67,7 +67,7 @@ def train_model(
     model, optim, train_dl = accelerator.prepare(model, optim, train_dl)
 
     # lr scheduling
-    sched = ExponentialLR(optim, 0.975)
+    sched = ExponentialLR(optim, 0.9725)
 
     # setup tracking / loggers for model
 
@@ -84,6 +84,14 @@ def train_model(
 
             # zero the optim gradients
             optim.zero_grad()
+
+            # normalize the input according to xi-median / IQR ()
+            q75, q25 = np.percentile(batch["past_values"].cpu().numpy(), [75, 25])
+            iqr = q75 - q25
+
+            batch["past_values"] = (
+                batch["past_values"] - T.median(batch["past_values"])
+            ) / iqr
 
             # send batch to device
             args = {
@@ -105,7 +113,7 @@ def train_model(
             losses.append(loss.item())
 
             databar.set_description(
-                f"Epoch: {epoch_num}, Iteration: {idx} / {num_batches_per_epoch} | {round(100*(idx/num_batches_per_epoch), 2)}%, Loss: {loss}"
+                f"Epoch: {epoch_num}, Iteration: {idx} / {num_batches_per_epoch} | {round(100*(idx/num_batches_per_epoch), 2)}%, Loss: {loss}, IQR: {iqr}"
             )
 
             # backprop
@@ -142,8 +150,15 @@ def train_model(
                         f"Skipping print as past_values only have variance of: {stddev_test}"
                     )
                     continue
+
+                q75, q25 = np.percentile(batch["past_values"].cpu().numpy(), [75, 25])
+                iqr = q75 - q25
+
+                past_vals = (
+                    batch["past_values"] - T.median(batch["past_values"])
+                ) / iqr
                 args = {
-                    "past_values": batch["past_values"].to(device),
+                    "past_values": past_vals.to(device),
                     "past_time_features": batch["past_time_features"].to(device),
                     "past_observed_mask": batch["past_observed_mask"].to(device),
                     "static_categorical_features": batch[
