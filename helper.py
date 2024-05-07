@@ -68,6 +68,16 @@ def parse_cli() -> argparse.Namespace:
         help="Toggle testing inference",
     )
 
+    parser.add_argument(
+        "-retrain",
+        "--retrain",
+        dest="retrain",
+        metavar="retrain",
+        default="",
+        type=str,
+        help="Toggle testing inference",
+    )
+
     args = parser.parse_args()
     return args
 

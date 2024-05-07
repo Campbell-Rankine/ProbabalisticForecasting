@@ -186,3 +186,7 @@ class ProbForecaster(nn.Module):
             decoder_layers=self.decoder_layers,
             d_model=self.d_model,
         )
+
+    # load model parameters
+    def load_from_weight_file(self, weights_dict):
+        self.transformer.load_state_dict(weights_dict)

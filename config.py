@@ -17,6 +17,6 @@ model_config = {
 
 hyperparams = {
     "betas": (0.95, 0.99),
-    "lr": 0.1,
+    "lr": 0.01,
     "weight_decay": 1e-2,
 }

@@ -13,6 +13,7 @@ from src.dataloaders import (
 )
 from train.train import *
 from helper import parse_cli
+from model_helpers import load_model_parameters
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -53,7 +54,7 @@ def main(args: argparse.Namespace):
     }
 
     model_params = {
-        "embedding_dim": 1,
+        "embedding_dim": 2,
         "encoder_layers": 8,
         "decoder_layers": 8,
         "d_model": 256,
@@ -72,6 +73,14 @@ def main(args: argparse.Namespace):
             transformer_params=model_params,
             verbose=False,
         )
+
+    # handle retrain case
+    path_to_weights = args.retrain
+    if not path_to_weights == "":
+        logging.info(f"Loading model weights from checkpoint path: {path_to_weights}")
+        checkpoint_dict = load_model_parameters(path_to_weights)
+        print(checkpoint_dict.keys())
+        model.load_from_weight_file(checkpoint_dict["model_state_dict"])
 
     # create dataloaders
     print("Creating data loaders")

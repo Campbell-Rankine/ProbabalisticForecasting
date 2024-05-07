@@ -26,7 +26,15 @@ def save_model_params(
         "epoch": epoch,
         "loss": losses,
         "optimizer_state_dict": optimizer.state_dict(),
-        "model_state_dict": model.state_dict(),
+        "model_state_dict": model.transformer.state_dict(),
         "sched_state_dict": scheduler.state_dict(),
     }
     T.save(to_save, f"{save_loc}/Forecaster-{today}.pth")
+
+
+def load_model_parameters(weight_loc: str) -> dict:
+    """
+    Load training weights, etc.
+    """
+    checkpoint_dict = T.load(weight_loc)
+    return checkpoint_dict

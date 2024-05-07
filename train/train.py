@@ -40,7 +40,7 @@ def train_model(
     use_tb: Optional[bool] = False,
     use_test: Optional[bool] = False,
     logger: Optional[logging.Logger] = None,
-    epochs: Optional[int] = 251,
+    epochs: Optional[int] = 91,
     batch_size: Optional[int] = 64,
     num_batches_per_epoch: Optional[
         int
@@ -80,6 +80,9 @@ def train_model(
 
     for epoch_num in databar:
         losses = []
+        optim.zero_grad()
+        if epoch_num % 20 == 0:
+            model.transformer.zero_grad()
         for idx, batch in enumerate(train_dl):
             # test batch. Comment out this code if not needed
             # for k, v in batch.items():
@@ -87,7 +90,6 @@ def train_model(
             # assert False
 
             # zero the optim gradients
-            optim.zero_grad()
 
             # normalize the input according to xi-median / IQR ()
             q75, q25 = np.percentile(batch["past_values"].cpu().numpy(), [75, 25])
@@ -144,39 +146,45 @@ def train_model(
         if use_test and epoch_num % 10 == 0:
             model.eval()
             optim.zero_grad()
+            T.cuda.empty_cache()
 
-            test_losses = []
-            last_test_loss = 0.0
-            for idx__, batch in enumerate(test_dl):
-                stddev_test = np.std(batch["past_values"].numpy()[:-60])
-                if stddev_test < 0.1:
-                    print(
-                        f"Skipping print as past_values only have variance of: {stddev_test}"
+            with T.no_grad():
+                test_losses = []
+                last_test_loss = 0.0
+                for idx__, batch in enumerate(test_dl):
+                    stddev_test = np.std(batch["past_values"].numpy()[:-60])
+                    if stddev_test < 0.1:
+                        print(
+                            f"Skipping print as past_values only have variance of: {stddev_test}"
+                        )
+                        continue
+
+                    q75, q25 = np.percentile(
+                        batch["past_values"].cpu().numpy(), [75, 25]
                     )
-                    continue
+                    iqr = q75 - q25
 
-                q75, q25 = np.percentile(batch["past_values"].cpu().numpy(), [75, 25])
-                iqr = q75 - q25
+                    past_vals = (
+                        batch["past_values"] - T.median(batch["past_values"])
+                    ) / iqr
+                    args = {
+                        "past_values": past_vals.to(device),
+                        "past_time_features": batch["past_time_features"].to(device),
+                        "past_observed_mask": batch["past_observed_mask"].to(device),
+                        "static_categorical_features": batch[
+                            "static_categorical_features"
+                        ].to(device),
+                        "future_time_features": batch["future_time_features"].to(
+                            device
+                        ),
+                        "output_hidden_states": True,
+                    }
+                    outputs = model(args, idx__, batch_size=batch_size, test=True)
 
-                past_vals = (
-                    batch["past_values"] - T.median(batch["past_values"])
-                ) / iqr
-                args = {
-                    "past_values": past_vals.to(device),
-                    "past_time_features": batch["past_time_features"].to(device),
-                    "past_observed_mask": batch["past_observed_mask"].to(device),
-                    "static_categorical_features": batch[
-                        "static_categorical_features"
-                    ].to(device),
-                    "future_time_features": batch["future_time_features"].to(device),
-                    "output_hidden_states": True,
-                }
-                outputs = model(args, idx__, batch_size=batch_size, test=True)
+                    output = outputs.sequences.cpu().numpy()
 
-                output = outputs.sequences.cpu().numpy()
-
-                gen_plot(output, batch, epoch_num)
-                break
+                    gen_plot(output, batch, epoch_num)
+                    break
 
             model.train()
 
