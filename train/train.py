@@ -38,7 +38,7 @@ def get_resource_usage():
     cpu_usage = _p.cpu_percent()
     mem_usage = _p.virtual_memory().percent
     reserved, total = T.cuda.mem_get_info()
-    gpu_usage = round(float(reserved / total), 2)
+    gpu_usage = round(100.0 * float(reserved / total), 2)
     return cpu_usage, mem_usage, gpu_usage
 
 
@@ -55,7 +55,7 @@ def train_model(
         int
     ] = 2000,  # also set in main but if you change this just pass it to the
     logging_path: Optional[str] = "./logging",
-    save_every: Optional[int] = 5,
+    save_every: Optional[int] = 2,
     save_path: Optional[str] = "./weights/checkpoints/",
 ):
     message = f"Initializing model training conditions \n --------------------------- \n Using Tensorboard: {use_tb} \n Using Test Data: {use_test} \n Learning Rate: {hyperparams['lr']} \n Weight Decay: {hyperparams['weight_decay']} \n Betas: {hyperparams['betas']} \n Device: {device}"

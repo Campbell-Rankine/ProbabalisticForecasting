@@ -120,7 +120,7 @@ def main(args: argparse.Namespace):
             batch_size=args.batch,
             use_test=True,
             num_batches_per_epoch=batches_per_epoch,
-            epochs=120,
+            epochs=70,
         )
     else:
         train_model(model, train_dl, test_dl, use_tb=True, batch_size=args.batch)
