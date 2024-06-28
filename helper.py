@@ -53,7 +53,7 @@ def parse_cli() -> argparse.Namespace:
         "--batch",
         dest="batch",
         metavar="batch",
-        default=7,
+        default=28,
         type=int,
         help="Override context length",
     )

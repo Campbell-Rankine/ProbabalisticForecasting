@@ -33,7 +33,7 @@ logger.addHandler(ch)
 workers = multiprocessing.cpu_count()
 date = datetime.now().strftime("%Y-%m-%d")
 one_year = (
-    str(int(date.split("-")[0]) - 1)
+    str(int(date.split("-")[0]) - 2)
     + "-"
     + date.split("-")[1]
     + "-"
@@ -109,10 +109,14 @@ def flatten_stocks(data: dict[pd.DataFrame], limiter: Optional[int] = -1):
         del id
         del start
 
-    # Calculate three day moving average
-    ema = data_["close"].ewm(com=0.4).mean()
-    return_dict["three-day-mv"].extend(ema)
-    return_dict["delta-ema"].extend(data_["close"] - ema)
+        # Calculate three day moving average
+        ema = pd.DataFrame(data_["close"]).ewm(span=7).mean()
+        ema = ema[ema.columns[0]].to_list()
+
+        logging.info(f"\nShape Comparison. EMA: {len(ema)}, DF: {len(data_['close'])}")
+        assert len(ema) == len(data_["close"])
+        return_dict["exponential-avg"].extend(ema)
+        return_dict["delta-ema"].extend(list(np.array(data_["close"]) - np.array(ema)))
 
     # add dim
     for key, val in return_dict.items():

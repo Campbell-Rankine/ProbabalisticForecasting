@@ -4,6 +4,7 @@ from typing import Optional
 import logging
 from tqdm import tqdm
 import os
+import psutil as _p
 
 import torch as T
 import torch.nn as nn
@@ -31,6 +32,14 @@ def logging_handler(message: str, logger: Optional[logging.Logger] = None):
     """
     if not logger is None:
         logger.info(f"Forecaster Logging: {message}")
+
+
+def get_resource_usage():
+    cpu_usage = _p.cpu_percent()
+    mem_usage = _p.virtual_memory().percent
+    reserved, total = T.cuda.mem_get_info()
+    gpu_usage = round(float(reserved / total), 2)
+    return cpu_usage, mem_usage, gpu_usage
 
 
 def train_model(
@@ -120,8 +129,10 @@ def train_model(
 
             losses.append(loss.item())
 
+            cpu_usage, mem_usage, gpu_usage = get_resource_usage()
+
             databar.set_description(
-                f"Epoch: {epoch_num}, Iteration: {idx} / {num_batches_per_epoch} | {round(100*(idx/num_batches_per_epoch), 2)}%, Loss: {loss}, IQR: {iqr}"
+                f"Epoch: {epoch_num}, Iteration: {idx} / {num_batches_per_epoch} | {round(100*(idx/num_batches_per_epoch), 2)}%, Loss: {loss}, IQR: {iqr}, CPU Usage: {cpu_usage}, Memory Usage: {mem_usage}, GPU Usage: {gpu_usage}"
             )
 
             # backprop

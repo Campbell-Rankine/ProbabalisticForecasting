@@ -66,6 +66,7 @@ class ProbForecaster(nn.Module):
         self.transformer = TimeSeriesTransformerForPrediction(self.config)
 
     def initialize_transformer_weights(self):
+        # The original paper recommends initializing the weights ~ U(0, 1). Pytorch implements this by default
         raise NotImplementedError
 
     def forward(self, args, num_iter, batch_size, test=False):

@@ -61,6 +61,8 @@ def create_data_transformation(
             + [AsNumpyArray(field="volume", expected_ndim=1, dtype=np.float32)]
             + [AsNumpyArray(field="mu", expected_ndim=1, dtype=np.float32)]
             + [AsNumpyArray(field="sigma", expected_ndim=1, dtype=np.float32)]
+            + [AsNumpyArray(field="exponential-avg", expected_ndim=1, dtype=np.float32)]
+            + [AsNumpyArray(field="delta-ema", expected_ndim=1, dtype=np.float32)]
             + [
                 AsNumpyArray(
                     field=FieldName.TARGET,
@@ -103,7 +105,16 @@ def create_data_transformation(
             # Step 8: Vstack temporal features
             VstackFeatures(
                 output_field=FieldName.FEAT_DYNAMIC_REAL,
-                input_fields=["open", "high", "low", "volume", "mu", "sigma"],
+                input_fields=[
+                    "open",
+                    "high",
+                    "low",
+                    "volume",
+                    "mu",
+                    "sigma",
+                    "exponential-avg",
+                    "delta-ema",
+                ],
             ),
             VstackFeatures(
                 output_field=FieldName.FEAT_TIME,

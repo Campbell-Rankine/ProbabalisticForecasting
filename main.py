@@ -44,7 +44,9 @@ def main(args: argparse.Namespace):
     train.set_transform(partial(transform_start_field, freq=args.freq))
     test.set_transform(partial(transform_start_field, freq=args.freq))
 
+    features = list(train[0].keys())
     cardinality = len(train[0]["open"])
+    batches_per_epoch = int(cardinality / args.batch) - 7
 
     data_params = {
         "prediction_length": args.pred,
@@ -52,7 +54,7 @@ def main(args: argparse.Namespace):
         "freq": args.freq,
         "categorical": 1,
         "cardinality": len(train[0]["open"]),
-        "dynamic_real": 6,
+        "dynamic_real": 8,
     }
 
     model_params = {
@@ -63,7 +65,9 @@ def main(args: argparse.Namespace):
     }
 
     if args.verbose:
-        logging.info(f"Dataset cardinality: {cardinality} items")
+        logging.info(
+            f"Dataset cardinality: {cardinality} items, Batches per Epoch: {batches_per_epoch}"
+        )
         model = ProbForecaster(
             data_params=data_params,
             transformer_params=model_params,
@@ -81,6 +85,7 @@ def main(args: argparse.Namespace):
     path_to_weights = args.retrain
     if not path_to_weights == "":
         logging.info(f"Loading model weights from checkpoint path: {path_to_weights}")
+        logging.info(f"Feature list:\n---------------------\n {features}")
         checkpoint_dict = load_model_parameters(path_to_weights)
         print(checkpoint_dict.keys())
         model.load_from_weight_file(checkpoint_dict["model_state_dict"])
@@ -92,7 +97,7 @@ def main(args: argparse.Namespace):
         freq=args.freq,
         data=train,
         batch_size=args.batch,
-        num_batches_per_epoch=24000,  # run through each
+        num_batches_per_epoch=batches_per_epoch,  # run through each
     )
 
     test_dl = create_train_dataloader(
@@ -114,7 +119,7 @@ def main(args: argparse.Namespace):
             logger=logging.getLogger(),
             batch_size=args.batch,
             use_test=True,
-            num_batches_per_epoch=24000,
+            num_batches_per_epoch=batches_per_epoch,
             epochs=120,
         )
     else:
