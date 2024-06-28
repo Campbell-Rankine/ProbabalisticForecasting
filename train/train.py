@@ -44,8 +44,10 @@ def train_model(
     batch_size: Optional[int] = 64,
     num_batches_per_epoch: Optional[
         int
-    ] = 140,  # also set in main but if you change this just pass it to the
+    ] = 2000,  # also set in main but if you change this just pass it to the
     logging_path: Optional[str] = "./logging",
+    save_every: Optional[int] = 5,
+    save_path: Optional[str] = "./weights/checkpoints/",
 ):
     message = f"Initializing model training conditions \n --------------------------- \n Using Tensorboard: {use_tb} \n Using Test Data: {use_test} \n Learning Rate: {hyperparams['lr']} \n Weight Decay: {hyperparams['weight_decay']} \n Betas: {hyperparams['betas']} \n Device: {device}"
     logging_handler(message, logger)
@@ -141,6 +143,19 @@ def train_model(
 
         # Step LR scheduler
         sched.step()
+
+        # Save model weights to checkpoint. This will get overwritten in the next save.
+        if save_every > -1 and epoch_num % save_every == 0:
+            logging.info(f"Saving model checkpoint for epoch: {epoch_num}")
+
+            save_model_params(
+                model=model,
+                optimizer=optim,
+                losses=losses,
+                epoch=epoch_num,
+                scheduler=sched,
+                name="checkpoint",
+            )
 
         # model to eval
         if use_test and epoch_num % 10 == 0:

@@ -44,12 +44,14 @@ def main(args: argparse.Namespace):
     train.set_transform(partial(transform_start_field, freq=args.freq))
     test.set_transform(partial(transform_start_field, freq=args.freq))
 
+    cardinality = len(train[0]["open"])
+
     data_params = {
         "prediction_length": args.pred,
         "context_length": args.context,
         "freq": args.freq,
         "categorical": 1,
-        "cardinality": 1247,
+        "cardinality": len(train[0]["open"]),
         "dynamic_real": 6,
     }
 
@@ -57,10 +59,11 @@ def main(args: argparse.Namespace):
         "embedding_dim": 2,
         "encoder_layers": 8,
         "decoder_layers": 8,
-        "d_model": 256,
+        "d_model": 512,
     }
 
     if args.verbose:
+        logging.info(f"Dataset cardinality: {cardinality} items")
         model = ProbForecaster(
             data_params=data_params,
             transformer_params=model_params,
@@ -89,7 +92,7 @@ def main(args: argparse.Namespace):
         freq=args.freq,
         data=train,
         batch_size=args.batch,
-        num_batches_per_epoch=140,  # run through each
+        num_batches_per_epoch=24000,  # run through each
     )
 
     test_dl = create_train_dataloader(
@@ -111,7 +114,8 @@ def main(args: argparse.Namespace):
             logger=logging.getLogger(),
             batch_size=args.batch,
             use_test=True,
-            num_batches_per_epoch=144,
+            num_batches_per_epoch=24000,
+            epochs=120,
         )
     else:
         train_model(model, train_dl, test_dl, use_tb=True, batch_size=args.batch)

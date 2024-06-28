@@ -1,6 +1,7 @@
 import torch as T
 from datetime import datetime
 import os
+from typing import Optional
 
 from ProbabalisticForecaster import ProbForecaster
 
@@ -17,6 +18,7 @@ def save_model_params(
     losses: list,
     epoch: int,
     scheduler: T.optim.lr_scheduler.ExponentialLR,
+    name: Optional[str] = None,
 ):
     """
     Save full training run including losses, optimizer etc.
@@ -29,7 +31,10 @@ def save_model_params(
         "model_state_dict": model.transformer.state_dict(),
         "sched_state_dict": scheduler.state_dict(),
     }
-    T.save(to_save, f"{save_loc}/Forecaster-{today}.pth")
+    if name is None:
+        T.save(to_save, f"{save_loc}/Forecaster-{today}.pth")
+    else:
+        T.save(to_save, f"{save_loc}/Forecaster-{name}.pth")
 
 
 def load_model_parameters(weight_loc: str) -> dict:

@@ -50,7 +50,7 @@ def pull_ticker_data(ticker):
         data = data.drop(["ticker"], axis=1)
 
         logging.info(f"Downloading: {ticker}, Price Variance: {np.std(data['close'])}")
-        if np.std(data["close"]) <= 0.5:
+        if np.std(data["close"]) <= 0.7:
             return None
 
         data["mu"] = np.mean(data["open"]) * np.ones_like(data["open"].to_numpy())
@@ -62,7 +62,10 @@ def pull_ticker_data(ticker):
         return None
 
 
-def flatten_stocks(data: dict, limiter: Optional[int] = -1):
+# feature creation functions for dataset
+
+
+def flatten_stocks(data: dict[pd.DataFrame], limiter: Optional[int] = -1):
     """
     Flatten pricing data and add ID as categorical variable for time series data processing
     """
@@ -78,6 +81,8 @@ def flatten_stocks(data: dict, limiter: Optional[int] = -1):
         "start": [],
         "mu": [],
         "sigma": [],
+        "exponential-avg": [],  # List storing Exponential Moving Average
+        "delta-ema": [],  # List storing (TARGET-EMA)
     }
 
     # iterate over stocks
@@ -104,11 +109,17 @@ def flatten_stocks(data: dict, limiter: Optional[int] = -1):
         del id
         del start
 
+    # Calculate three day moving average
+    ema = data_["close"].ewm(com=0.4).mean()
+    return_dict["three-day-mv"].extend(ema)
+    return_dict["delta-ema"].extend(data_["close"] - ema)
+
     # add dim
     for key, val in return_dict.items():
 
         return_dict[key] = np.nan_to_num(val, 0.0)
         return_dict[key] = return_dict[key].reshape(1, -1)
+
     return return_dict
 
 
@@ -117,7 +128,9 @@ if __name__ == "__main__":
     print(one_year)
 
     tickers = yf.tickers_nasdaq()
-    inds = np.random.uniform(0.0, len(tickers), 650)
+    inds = np.random.uniform(
+        0.0, len(tickers), len(tickers)
+    )  # in the case where param 3 = len(tickers), get random shuffle of indices for nasdaq tickers
     inds = [int(x) for x in inds]
     tickers = [tickers[ind] for ind in inds]  # Debug flag application
 
@@ -131,8 +144,8 @@ if __name__ == "__main__":
     list_dfs = list(filter(lambda item: item is not None, list_dfs))
 
     # Train test inf splitting
-    train = list_dfs[:450]
-    test = list_dfs[450:]
+    train = list_dfs[: len(list_dfs) - 300]
+    test = list_dfs[len(list_dfs) - 300 :]
 
     download_end = timer()
     print(f"Downloading ticker data took: {round(download_end - download_start, 2)} s")

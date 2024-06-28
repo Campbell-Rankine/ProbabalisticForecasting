@@ -17,6 +17,6 @@ model_config = {
 
 hyperparams = {
     "betas": (0.95, 0.99),
-    "lr": 0.01,
-    "weight_decay": 1e-2,
+    "lr": 1e-4,  # Increment this down as we run off of pretrain checkpoints (currently this is for the next one)
+    "weight_decay": 1e-3,
 }
