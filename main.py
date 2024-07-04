@@ -122,7 +122,7 @@ def main(args: argparse.Namespace):
             batch_size=args.batch,
             use_test=True,
             num_batches_per_epoch=batches_per_epoch,
-            epochs=70,
+            epochs=(70 - (checkpoint_dict["epoch"] + 1)),
             checkpoint_dict=checkpoint_dict,
         )
     else:

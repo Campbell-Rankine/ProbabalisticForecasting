@@ -104,6 +104,7 @@ def train_model(
         tbwriter = SummaryWriter(logging_path)
 
     for epoch_num in databar:
+        #
         if epoch_num <= checkpoint_dict["epoch"]:
             continue
         T.cuda.empty_cache()
