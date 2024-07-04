@@ -46,7 +46,7 @@ def main(args: argparse.Namespace):
 
     features = list(train[0].keys())
     cardinality = len(train[0]["open"])
-    batches_per_epoch = int(cardinality / args.batch) - 7
+    batches_per_epoch = int(cardinality / args.batch)
 
     data_params = {
         "prediction_length": args.pred,
@@ -83,11 +83,13 @@ def main(args: argparse.Namespace):
 
     # handle retrain case
     path_to_weights = args.retrain
+    checkpoint_dict = None
     if not path_to_weights == "":
         logging.info(f"Loading model weights from checkpoint path: {path_to_weights}")
         logging.info(f"Feature list:\n---------------------\n {features}")
         checkpoint_dict = load_model_parameters(path_to_weights)
-        print(checkpoint_dict.keys())
+        logging.info(checkpoint_dict.keys())
+        logging.info(f"Resuming training run from epoch: {checkpoint_dict['epoch']+1}")
         model.load_from_weight_file(checkpoint_dict["model_state_dict"])
 
     # create dataloaders
@@ -121,6 +123,7 @@ def main(args: argparse.Namespace):
             use_test=True,
             num_batches_per_epoch=batches_per_epoch,
             epochs=70,
+            checkpoint_dict=checkpoint_dict,
         )
     else:
         train_model(model, train_dl, test_dl, use_tb=True, batch_size=args.batch)

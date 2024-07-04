@@ -55,8 +55,11 @@ def train_model(
         int
     ] = 2000,  # also set in main but if you change this just pass it to the
     logging_path: Optional[str] = "./logging",
-    save_every: Optional[int] = 2,
+    save_every: Optional[
+        int
+    ] = 1,  # each epoch takes about 4 hours if using the default settings
     save_path: Optional[str] = "./weights/checkpoints/",
+    checkpoint_dict=None,
 ):
     message = f"Initializing model training conditions \n --------------------------- \n Using Tensorboard: {use_tb} \n Using Test Data: {use_test} \n Learning Rate: {hyperparams['lr']} \n Weight Decay: {hyperparams['weight_decay']} \n Betas: {hyperparams['betas']} \n Device: {device}"
     logging_handler(message, logger)
@@ -67,18 +70,29 @@ def train_model(
 
     # create optimizer
     model.to(device)
-    optim = AdamW(
-        model.parameters(),
-        lr=hyperparams["lr"],
-        betas=hyperparams["betas"],
-        weight_decay=hyperparams["weight_decay"],
-    )
+    if checkpoint_dict is None:
+        optim = AdamW(
+            model.parameters(),
+            lr=hyperparams["lr"],
+            betas=hyperparams["betas"],
+            weight_decay=hyperparams["weight_decay"],
+        )
+        sched = ExponentialLR(optim, 0.9725)
+    else:
+        optim = AdamW(
+            model.parameters(),
+            lr=hyperparams["lr"],
+            betas=hyperparams["betas"],
+            weight_decay=hyperparams["weight_decay"],
+        )
+        sched = ExponentialLR(optim, 0.9725)
+        optim.load_state_dict(checkpoint_dict["optimizer_state_dict"])
+        sched.load_state_dict(checkpoint_dict["sched_state_dict"])
 
     # use accelerator to prepare components
     model, optim, train_dl = accelerator.prepare(model, optim, train_dl)
 
     # lr scheduling
-    sched = ExponentialLR(optim, 0.9725)
 
     # setup tracking / loggers for model
 
@@ -90,6 +104,9 @@ def train_model(
         tbwriter = SummaryWriter(logging_path)
 
     for epoch_num in databar:
+        if epoch_num <= checkpoint_dict["epoch"]:
+            continue
+        T.cuda.empty_cache()
         losses = []
         optim.zero_grad()
         if epoch_num % 20 == 0:
@@ -168,51 +185,64 @@ def train_model(
                 name="checkpoint",
             )
 
-        # model to eval
-        if use_test and epoch_num % 10 == 0:
-            model.eval()
-            optim.zero_grad()
-            T.cuda.empty_cache()
+        # Handle Gradient memory for test case
+        T.cuda.empty_cache()
+        with T.no_grad():
+            with T.cuda.amp.autocast(enabled=True):
+                # model to eval
+                if use_test and epoch_num % 10 == 0:
+                    model.eval()
+                    optim.zero_grad()
 
-            with T.no_grad():
-                test_losses = []
-                last_test_loss = 0.0
-                for idx__, batch in enumerate(test_dl):
-                    stddev_test = np.std(batch["past_values"].numpy()[:-60])
-                    if stddev_test < 0.1:
-                        print(
-                            f"Skipping print as past_values only have variance of: {stddev_test}"
+                    test_losses = []
+                    last_test_loss = 0.0
+                    for idx__, batch in enumerate(test_dl):
+                        stddev_test = np.std(batch["past_values"].numpy()[:-60])
+                        if stddev_test < 0.1:
+                            print(
+                                f"Skipping print as past_values only have variance of: {stddev_test}"
+                            )
+                            continue
+
+                        q75, q25 = np.percentile(
+                            batch["past_values"].cpu().numpy(), [75, 25]
                         )
-                        continue
+                        iqr = q75 - q25
 
-                    q75, q25 = np.percentile(
-                        batch["past_values"].cpu().numpy(), [75, 25]
-                    )
-                    iqr = q75 - q25
+                        past_vals = (
+                            batch["past_values"] - T.median(batch["past_values"])
+                        ) / iqr
+                        args = {
+                            "past_values": past_vals.to(device),
+                            "past_time_features": batch["past_time_features"].to(
+                                device
+                            ),
+                            "past_observed_mask": batch["past_observed_mask"].to(
+                                device
+                            ),
+                            "static_categorical_features": batch[
+                                "static_categorical_features"
+                            ].to(device),
+                            "future_time_features": batch["future_time_features"].to(
+                                device
+                            ),
+                            "output_hidden_states": True,
+                        }
 
-                    past_vals = (
-                        batch["past_values"] - T.median(batch["past_values"])
-                    ) / iqr
-                    args = {
-                        "past_values": past_vals.to(device),
-                        "past_time_features": batch["past_time_features"].to(device),
-                        "past_observed_mask": batch["past_observed_mask"].to(device),
-                        "static_categorical_features": batch[
-                            "static_categorical_features"
-                        ].to(device),
-                        "future_time_features": batch["future_time_features"].to(
-                            device
-                        ),
-                        "output_hidden_states": True,
-                    }
-                    outputs = model(args, idx__, batch_size=batch_size, test=True)
+                        try:
+                            outputs = model(
+                                args, idx__, batch_size=batch_size, test=True
+                            )
 
-                    output = outputs.sequences.cpu().numpy()
+                            output = outputs.sequences.cpu().numpy()
 
-                    gen_plot(output, batch, epoch_num)
-                    break
-
-            model.train()
+                            gen_plot(output, batch, epoch_num)
+                            break
+                        except Exception as e:
+                            logger.warning(
+                                f"Encountered error in test forward call: {e}"
+                            )
+        model.train()
 
     # shutoff
     tbwriter.close()
