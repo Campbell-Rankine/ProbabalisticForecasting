@@ -107,24 +107,37 @@ def main(args: argparse.Namespace):
         freq=args.freq,
         data=test,
         batch_size=args.batch,
-        num_batches_per_epoch=1,
+        num_batches_per_epoch=1,  # consider this NUM_RETRIES
     )
 
     print("")
 
     if args.verbose:
-        train_model(
-            model,
-            train_dl,
-            test_dl,
-            use_tb=True,
-            logger=logging.getLogger(),
-            batch_size=args.batch,
-            use_test=True,
-            num_batches_per_epoch=batches_per_epoch,
-            epochs=(70 - (checkpoint_dict["epoch"] + 1)),
-            checkpoint_dict=checkpoint_dict,
-        )
+        if not checkpoint_dict is None:
+            train_model(
+                model,
+                train_dl,
+                test_dl,
+                use_tb=True,
+                logger=logging.getLogger(),
+                batch_size=args.batch,
+                use_test=True,
+                num_batches_per_epoch=batches_per_epoch,
+                epochs=(70 - (checkpoint_dict["epoch"] + 1)),
+                checkpoint_dict=checkpoint_dict,
+            )
+        else:
+            train_model(
+                model,
+                train_dl,
+                test_dl,
+                use_tb=True,
+                logger=logging.getLogger(),
+                batch_size=args.batch,
+                use_test=True,
+                num_batches_per_epoch=batches_per_epoch,
+                epochs=70,
+            )
     else:
         train_model(model, train_dl, test_dl, use_tb=True, batch_size=args.batch)
 

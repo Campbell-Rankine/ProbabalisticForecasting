@@ -93,16 +93,18 @@ class ProbForecaster(nn.Module):
         if not test:
             return self.transformer(**args)
         else:
+            args["output_hidden_states"] = False
+            args["output_attentions"] = False
             return self.transformer.generate(**args)
 
     def parameters(self):
         return self.transformer.parameters()
 
     def train(self):
-        return self.transformer.train()
+        self.transformer = self.transformer.train()
 
     def eval(self):
-        return self.transformer.eval()
+        self.transformer = self.transformer.eval()
 
     def get_grad_norm(self):
         total_norm = 0.0

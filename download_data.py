@@ -92,7 +92,9 @@ def flatten_stocks(data: dict[pd.DataFrame], limiter: Optional[int] = -1):
         return_dict["open"].extend(data_["open"])
         return_dict["high"].extend(data_["high"])
         return_dict["low"].extend(data_["low"])
-        return_dict["target"].extend(data_["close"])
+        return_dict["target"].extend(
+            data_["close"]
+        )  # TODO: Target, daily return (tomorrow and today's close). Extra feature. T_1 - T_N (not T_0)
         return_dict["adjclose"].extend(data_["adjclose"])
         return_dict["volume"].extend(data_["volume"])
         return_dict["mu"].extend(data_["mu"])
@@ -115,6 +117,8 @@ def flatten_stocks(data: dict[pd.DataFrame], limiter: Optional[int] = -1):
 
         logging.info(f"\nShape Comparison. EMA: {len(ema)}, DF: {len(data_['close'])}")
         assert len(ema) == len(data_["close"])
+
+        # Add additional features here:
         return_dict["exponential-avg"].extend(ema)
         return_dict["delta-ema"].extend(list(np.array(data_["close"]) - np.array(ema)))
 

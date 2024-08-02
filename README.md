@@ -11,16 +11,29 @@ By default the data download script will run using the current date and will att
     python download_data.py
 ```
 
-### Running the training script
+### Model Training
+
+The environment to run the main.py script can be set up using the provided docker image. To build the docker image run:
+```sh
+    docker build --platform linux/amd64 -t prob_forecasting .
+```
+
+Once built, access the image terminal by running:
+```sh
+    docker run --rm -it gpus=all prob_forecasting sh
+```
+
 
 To run the script with default parameters use:
 ```sh
     python main.py
+    python3 main.py
 ```
 
 To see a full list of command line arguments use:
 ```sh
     python main.py --help
+    python3 main.py --help
 ```
 
 ### Tensorboard Logging

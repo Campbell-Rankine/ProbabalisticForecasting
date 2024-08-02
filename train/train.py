@@ -69,7 +69,7 @@ def train_model(
         os.mkdir(logging_path)
 
     # create optimizer
-    model.to(device)
+    model.transformer.to(device)
     if checkpoint_dict is None:
         optim = AdamW(
             model.parameters(),
@@ -104,10 +104,10 @@ def train_model(
         tbwriter = SummaryWriter(logging_path)
 
     for epoch_num in databar:
-        #
-        if epoch_num <= checkpoint_dict["epoch"]:
-            continue
-        T.cuda.empty_cache()
+        # skip to current epoch if load dict not none
+        if not checkpoint_dict is None:
+            if epoch_num <= checkpoint_dict["epoch"]:
+                continue
         losses = []
         optim.zero_grad()
         if epoch_num % 20 == 0:
@@ -177,72 +177,64 @@ def train_model(
         if save_every > -1 and epoch_num % save_every == 0:
             logging.info(f"Saving model checkpoint for epoch: {epoch_num}")
 
-            save_model_params(
-                model=model,
-                optimizer=optim,
-                losses=losses,
-                epoch=epoch_num,
-                scheduler=sched,
-                name="checkpoint",
-            )
+            # save_model_params(
+            #    model=model,
+            #    optimizer=optim,
+            #    losses=losses,
+            #    epoch=epoch_num,
+            #    scheduler=sched,
+            #    name="checkpoint",
+            # )
 
         # Handle Gradient memory for test case
         T.cuda.empty_cache()
         with T.no_grad():
-            with T.cuda.amp.autocast(enabled=True):
-                # model to eval
-                if use_test and epoch_num % 10 == 0:
-                    model.eval()
-                    optim.zero_grad()
+            # model to eval
+            if use_test and epoch_num % (save_every) == 0:
+                model.eval()
+                optim.zero_grad()
 
-                    test_losses = []
-                    last_test_loss = 0.0
-                    for idx__, batch in enumerate(test_dl):
-                        stddev_test = np.std(batch["past_values"].numpy()[:-60])
-                        if stddev_test < 0.1:
-                            print(
-                                f"Skipping print as past_values only have variance of: {stddev_test}"
-                            )
-                            continue
-
-                        q75, q25 = np.percentile(
-                            batch["past_values"].cpu().numpy(), [75, 25]
+                test_losses = []
+                last_test_loss = 0.0
+                for idx__, batch in enumerate(test_dl):
+                    stddev_test = np.std(batch["past_values"].numpy()[:-60])
+                    if stddev_test < 0.1:
+                        print(
+                            f"Skipping print as past_values only have variance of: {stddev_test}"
                         )
-                        iqr = q75 - q25
+                        continue
 
-                        past_vals = (
-                            batch["past_values"] - T.median(batch["past_values"])
-                        ) / iqr
-                        args = {
-                            "past_values": past_vals.to(device),
-                            "past_time_features": batch["past_time_features"].to(
-                                device
-                            ),
-                            "past_observed_mask": batch["past_observed_mask"].to(
-                                device
-                            ),
-                            "static_categorical_features": batch[
-                                "static_categorical_features"
-                            ].to(device),
-                            "future_time_features": batch["future_time_features"].to(
-                                device
-                            ),
-                            "output_hidden_states": True,
-                        }
+                    q75, q25 = np.percentile(
+                        batch["past_values"].cpu().numpy(), [75, 25]
+                    )
+                    iqr = q75 - q25
 
-                        try:
-                            outputs = model(
-                                args, idx__, batch_size=batch_size, test=True
-                            )
+                    past_vals = (
+                        batch["past_values"] - T.median(batch["past_values"])
+                    ) / iqr
+                    args = {
+                        "past_values": past_vals.to(device),
+                        "past_time_features": batch["past_time_features"].to(device),
+                        "past_observed_mask": batch["past_observed_mask"].to(device),
+                        "static_categorical_features": batch[
+                            "static_categorical_features"
+                        ].to(device),
+                        "future_time_features": batch["future_time_features"].to(
+                            device
+                        ),
+                        "output_hidden_states": True,
+                    }
 
-                            output = outputs.sequences.cpu().numpy()
+                    try:
+                        outputs = model(args, idx__, batch_size=batch_size)
+                        print(outputs.sequences.shape)
+                        output = outputs.params.cpu().numpy()
 
-                            gen_plot(output, batch, epoch_num)
-                            break
-                        except Exception as e:
-                            logger.warning(
-                                f"Encountered error in test forward call: {e}"
-                            )
+                        gen_plot(output, batch, epoch_num)
+                        break
+                    except Exception as e:
+                        logger.warning(f"Encountered error in test forward call: {e}")
+                        raise e
         model.train()
 
     # shutoff
