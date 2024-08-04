@@ -20,7 +20,7 @@ The environment to run the main.py script can be set up using the provided docke
 
 Once built, access the image terminal by running:
 ```sh
-    docker run --rm -it gpus=all prob_forecasting sh
+    docker run --gpus=all --rm -it prob_forecasting sh
 ```
 
 

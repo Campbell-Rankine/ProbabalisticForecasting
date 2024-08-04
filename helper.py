@@ -43,7 +43,7 @@ def parse_cli() -> argparse.Namespace:
         "--context",
         dest="context",
         metavar="context",
-        default=182,
+        default=92,
         type=int,
         help="Override context length",
     )
@@ -53,7 +53,7 @@ def parse_cli() -> argparse.Namespace:
         "--batch",
         dest="batch",
         metavar="batch",
-        default=28,
+        default=32,
         type=int,
         help="Override context length",
     )
@@ -76,6 +76,36 @@ def parse_cli() -> argparse.Namespace:
         default="",
         type=str,
         help="Toggle testing inference",
+    )
+
+    parser.add_argument(
+        "-retest",
+        "--retest",
+        dest="retest",
+        metavar="retest",
+        default=False,
+        type=bool,
+        help="Toggle training run restart testing inference (default : False)",
+    )
+
+    parser.add_argument(
+        "-e",
+        "--epochs",
+        dest="epochs",
+        metavar="epochs",
+        default=70,
+        type=int,
+        help="Num training epochs (default : 70)",
+    )
+
+    parser.add_argument(
+        "-s",
+        "--save",
+        dest="save_every",
+        metavar="save_every",
+        default=1000,
+        type=int,  # TODO: Implement functionality to load after iterations.
+        help="Number of iterations to run before saving the checkpoint (default : 70)",  # TODO: Write code that saves model to checkpoint: Forecaster-checkpoint-{epoch}.pth
     )
 
     args = parser.parse_args()

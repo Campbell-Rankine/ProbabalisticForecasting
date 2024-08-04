@@ -19,6 +19,7 @@ from ProbabalisticForecaster import ProbForecaster
 from config import model_config, hyperparams
 from model_helpers import save_model_params
 from src.plotting import gen_plot
+from testing.testing_script import test_fn
 
 
 # globals
@@ -53,14 +54,16 @@ def train_model(
     batch_size: Optional[int] = 64,
     num_batches_per_epoch: Optional[
         int
-    ] = 2000,  # also set in main but if you change this just pass it to the
+    ] = 2000,  # also set in main but if you change this just pass it to the dataloader
     logging_path: Optional[str] = "./logging",
     save_every: Optional[
         int
     ] = 1,  # each epoch takes about 4 hours if using the default settings
     save_path: Optional[str] = "./weights/checkpoints/",
     checkpoint_dict=None,
+    retest: Optional[bool] = False,
 ):
+    train_exp_data = []
     message = f"Initializing model training conditions \n --------------------------- \n Using Tensorboard: {use_tb} \n Using Test Data: {use_test} \n Learning Rate: {hyperparams['lr']} \n Weight Decay: {hyperparams['weight_decay']} \n Betas: {hyperparams['betas']} \n Device: {device}"
     logging_handler(message, logger)
 
@@ -89,7 +92,7 @@ def train_model(
         optim.load_state_dict(checkpoint_dict["optimizer_state_dict"])
         sched.load_state_dict(checkpoint_dict["sched_state_dict"])
 
-    # use accelerator to prepare components
+    # accelerate
     model, optim, train_dl = accelerator.prepare(model, optim, train_dl)
 
     # lr scheduling
@@ -98,10 +101,27 @@ def train_model(
 
     # set model to train (calculate grads)
     model.train()
+    optim.zero_grad()
+
     databar = tqdm(range(epochs))
     tbwriter = None
     if use_tb:
         tbwriter = SummaryWriter(logging_path)
+    epoch_num = 0
+    # retest before starting
+    if retest:
+        _ = test_fn(
+            test_dl,
+            device,
+            batch_size,
+            epoch_num,
+            model,
+            optim,
+            accelerator,
+            use_test,
+            save_every,
+            logger,
+        )
 
     for epoch_num in databar:
         # skip to current epoch if load dict not none
@@ -113,13 +133,6 @@ def train_model(
         if epoch_num % 20 == 0:
             model.transformer.zero_grad()
         for idx, batch in enumerate(train_dl):
-            # test batch. Comment out this code if not needed
-            # for k, v in batch.items():
-            #     print(k, v.shape, v.type())
-            # assert False
-
-            # zero the optim gradients
-
             # normalize the input according to xi-median / IQR ()
             q75, q25 = np.percentile(batch["past_values"].cpu().numpy(), [75, 25])
             iqr = q75 - q25
@@ -157,6 +170,12 @@ def train_model(
             accelerator.backward(loss)
             optim.step()
 
+            # save training experiment data
+            if idx % 50 == 0:
+                train_exp_data.append(
+                    {"Epoch": epoch_num, "Iteration": idx, "Loss": loss, "IQR": iqr}
+                )
+
             # Write epoch data to tensorboard
             if epoch_num % 5 == 0 and not tbwriter is None:
                 grad_norm = model.get_grad_norm()
@@ -177,68 +196,37 @@ def train_model(
         if save_every > -1 and epoch_num % save_every == 0:
             logging.info(f"Saving model checkpoint for epoch: {epoch_num}")
 
-            # save_model_params(
-            #    model=model,
-            #    optimizer=optim,
-            #    losses=losses,
-            #    epoch=epoch_num,
-            #    scheduler=sched,
-            #    name="checkpoint",
-            # )
+            save_model_params(
+                model=model,
+                optimizer=optim,
+                losses=losses,
+                epoch=epoch_num,
+                scheduler=sched,
+                name="checkpoint",
+            )
+
+            # save experiment csv
+            path_to_csv = "./logging/experiments/training_run.csv"
+            df = pd.DataFrame(train_exp_data)
+            df.to_csv(path_to_csv)
 
         # Handle Gradient memory for test case
-        T.cuda.empty_cache()
-        with T.no_grad():
-            # model to eval
-            if use_test and epoch_num % (save_every) == 0:
-                model.eval()
-                optim.zero_grad()
-
-                test_losses = []
-                last_test_loss = 0.0
-                for idx__, batch in enumerate(test_dl):
-                    stddev_test = np.std(batch["past_values"].numpy()[:-60])
-                    if stddev_test < 0.1:
-                        print(
-                            f"Skipping print as past_values only have variance of: {stddev_test}"
-                        )
-                        continue
-
-                    q75, q25 = np.percentile(
-                        batch["past_values"].cpu().numpy(), [75, 25]
-                    )
-                    iqr = q75 - q25
-
-                    past_vals = (
-                        batch["past_values"] - T.median(batch["past_values"])
-                    ) / iqr
-                    args = {
-                        "past_values": past_vals.to(device),
-                        "past_time_features": batch["past_time_features"].to(device),
-                        "past_observed_mask": batch["past_observed_mask"].to(device),
-                        "static_categorical_features": batch[
-                            "static_categorical_features"
-                        ].to(device),
-                        "future_time_features": batch["future_time_features"].to(
-                            device
-                        ),
-                        "output_hidden_states": True,
-                    }
-
-                    try:
-                        outputs = model(args, idx__, batch_size=batch_size)
-                        print(outputs.sequences.shape)
-                        output = outputs.params.cpu().numpy()
-
-                        gen_plot(output, batch, epoch_num)
-                        break
-                    except Exception as e:
-                        logger.warning(f"Encountered error in test forward call: {e}")
-                        raise e
-        model.train()
+        _ = test_fn(
+            test_dl,
+            device,
+            batch_size,
+            epoch_num,
+            model,
+            optim,
+            accelerator,
+            use_test,
+            save_every,
+            logger,
+        )
 
     # shutoff
     tbwriter.close()
+
     save_model_params(
         model=model, optimizer=optim, losses=losses, epoch=epoch_num, scheduler=sched
     )

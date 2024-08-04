@@ -1,5 +1,5 @@
 """
-Pull the last year of stock data
+Pull the last n-years of stock data
 """
 
 import os

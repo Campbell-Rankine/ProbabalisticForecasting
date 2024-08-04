@@ -23,6 +23,8 @@ formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+logger.info(f"Imports finished. Start run.")
+
 df_list = load_data()
 
 """
@@ -59,8 +61,8 @@ def main(args: argparse.Namespace):
 
     model_params = {
         "embedding_dim": 2,
-        "encoder_layers": 8,
-        "decoder_layers": 8,
+        "encoder_layers": 6,
+        "decoder_layers": 6,
         "d_model": 512,
     }
 
@@ -107,7 +109,7 @@ def main(args: argparse.Namespace):
         freq=args.freq,
         data=test,
         batch_size=args.batch,
-        num_batches_per_epoch=1,  # consider this NUM_RETRIES
+        num_batches_per_epoch=10,  # consider this NUM_RETRIES
     )
 
     print("")
@@ -123,8 +125,9 @@ def main(args: argparse.Namespace):
                 batch_size=args.batch,
                 use_test=True,
                 num_batches_per_epoch=batches_per_epoch,
-                epochs=(70 - (checkpoint_dict["epoch"] + 1)),
+                epochs=(int(args.epochs) - (checkpoint_dict["epoch"] + 1)),
                 checkpoint_dict=checkpoint_dict,
+                retest=args.retest,
             )
         else:
             train_model(
@@ -136,7 +139,8 @@ def main(args: argparse.Namespace):
                 batch_size=args.batch,
                 use_test=True,
                 num_batches_per_epoch=batches_per_epoch,
-                epochs=70,
+                epochs=int(args.epochs),
+                retest=args.retest,
             )
     else:
         train_model(model, train_dl, test_dl, use_tb=True, batch_size=args.batch)

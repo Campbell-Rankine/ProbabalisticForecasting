@@ -1,4 +1,5 @@
-# GLOBAL BUILD LIBRARIES
+# WSL 2.0 docker image to run main.py. If using windows without WSL2.0 run git checkout -b windows:base
+
 # Use NVIDIA Triton Inference server for GPU acceleration
 FROM nvcr.io/nvidia/tritonserver:24.07-trtllm-python-py3 as base
 
@@ -17,12 +18,12 @@ RUN apt-get update && apt-get -y install python3.10 python3-pip openmpi-bin libo
 # set CWD
 WORKDIR /usr/local/bin
 
+# install python dependencies (before dev to save on build time)
+COPY ./requirements.txt ./requirements.txt
+RUN pip3 install -r requirements.txt
+
 # LOCAL BUILD LIBRARIES
-# Split - Python installs
 FROM base as dev
 
 # Copy local files
 COPY . .
-
-# install dependencies
-RUN pip3 install -r requirements.txt

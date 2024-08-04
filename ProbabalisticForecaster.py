@@ -90,12 +90,13 @@ class ProbForecaster(nn.Module):
         args["static_categorical_features"] = args["static_categorical_features"][
             start:end
         ]
-        if not test:
-            return self.transformer(**args)
-        else:
-            args["output_hidden_states"] = False
-            args["output_attentions"] = False
+
+        if test:
+            del args["future_values"]
+            del args["future_observed_mask"]
             return self.transformer.generate(**args)
+
+        return self.transformer(**args)
 
     def parameters(self):
         return self.transformer.parameters()

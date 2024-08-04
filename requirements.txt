@@ -9,4 +9,3 @@ torch==2.2.2
 yahoo_fin
 tqdm
 matplotlib
-pickle
