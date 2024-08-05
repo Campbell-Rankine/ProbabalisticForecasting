@@ -8,7 +8,7 @@ def gen_plot(
     outputs, batch, epoch, figheight: Optional[int] = 5, figwidth: Optional[int] = 7
 ):
 
-    path = "./test/results"
+    path = "./testing/results"
 
     for idx, row in enumerate(batch["past_values"]):
 

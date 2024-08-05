@@ -14,6 +14,9 @@ from torch.optim.lr_scheduler import ExponentialLR
 from accelerate import Accelerator
 from torch.utils.tensorboard import SummaryWriter
 
+from src.experiment_tracking import (
+    experiment_data,
+)  # TODO: Implement functionality into training script
 from src.utils import load_data, convert_date_to_period, send_args_to_device
 from ProbabalisticForecaster import ProbForecaster
 from config import model_config, hyperparams
@@ -63,7 +66,6 @@ def train_model(
     checkpoint_dict=None,
     retest: Optional[bool] = False,
 ):
-    train_exp_data = []
     message = f"Initializing model training conditions \n --------------------------- \n Using Tensorboard: {use_tb} \n Using Test Data: {use_test} \n Learning Rate: {hyperparams['lr']} \n Weight Decay: {hyperparams['weight_decay']} \n Betas: {hyperparams['betas']} \n Device: {device}"
     logging_handler(message, logger)
 
@@ -123,16 +125,35 @@ def train_model(
             logger,
         )
 
+    # prime experiment tracking
+    records = experiment_data()
+    records.send(None)  # prime microservice
+
+    data = []
+    total_iters = 0
+    losses_avg = 0.0
+    iqr_avg = 0.0
+    grad_avg = 0.0
+
+    # build per epoch
+
     for epoch_num in databar:
         # skip to current epoch if load dict not none
         if not checkpoint_dict is None:
             if epoch_num <= checkpoint_dict["epoch"]:
                 continue
+
         losses = []
+        iqrs = []
+        grads = []
+
         optim.zero_grad()
+
         if epoch_num % 20 == 0:
             model.transformer.zero_grad()
+
         for idx, batch in enumerate(train_dl):
+            total_iters += 1
             # normalize the input according to xi-median / IQR ()
             q75, q25 = np.percentile(batch["past_values"].cpu().numpy(), [75, 25])
             iqr = q75 - q25
@@ -158,8 +179,6 @@ def train_model(
             outputs = model(args, idx, batch_size=batch_size)
             loss = outputs.loss
 
-            losses.append(loss.item())
-
             cpu_usage, mem_usage, gpu_usage = get_resource_usage()
 
             databar.set_description(
@@ -169,12 +188,6 @@ def train_model(
             # backprop
             accelerator.backward(loss)
             optim.step()
-
-            # save training experiment data
-            if idx % 50 == 0:
-                train_exp_data.append(
-                    {"Epoch": epoch_num, "Iteration": idx, "Loss": loss, "IQR": iqr}
-                )
 
             # Write epoch data to tensorboard
             if epoch_num % 5 == 0 and not tbwriter is None:
@@ -189,8 +202,19 @@ def train_model(
                 )
                 tbwriter.add_scalar("Gradient Norm", grad_norm, (epoch_num + 1) * idx)
 
+            # save training experiment data
+            data.append({"loss": loss.item(), "iqr": iqr, "grad": grad_norm})
+            losses.append(loss.item())
+            iqrs.append(iqr)
+            grads.append(grad_norm)
+
         # Step LR scheduler
         sched.step()
+
+        # get statistics for epoch
+        losses_avg += np.sum(np.abs(losses))  # add abs in case loss function includes -
+        iqr_avg += np.sum(np.abs(iqrs))
+        grad_avg += np.sum(np.abs(grads))
 
         # Save model weights to checkpoint. This will get overwritten in the next save.
         if save_every > -1 and epoch_num % save_every == 0:
@@ -206,9 +230,14 @@ def train_model(
             )
 
             # save experiment csv
-            path_to_csv = "./logging/experiments/training_run.csv"
-            df = pd.DataFrame(train_exp_data)
-            df.to_csv(path_to_csv)
+            records.send({"data": data})
+            records.send({"avg_loss": losses_avg / total_iters})
+            records.send({"avg_iqr": iqr_avg / total_iters})
+            records.send({"avg_grad_norm": grad_avg / total_iters})
+            records.send({"total_iters": total_iters})
+            records.send("SAVE")
+
+            # clear mem
 
         # Handle Gradient memory for test case
         _ = test_fn(
@@ -225,6 +254,10 @@ def train_model(
         )
 
     # shutoff
+    records.send("SAVE")
+    out = records.send("STOP_CODE")
+    print("TRAINING RUN FINISHED\n\n")
+    print(out)
     tbwriter.close()
 
     save_model_params(
