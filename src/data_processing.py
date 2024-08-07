@@ -58,6 +58,7 @@ def create_data_transformation(
             [AsNumpyArray(field="open", expected_ndim=1, dtype=np.float32)]
             + [AsNumpyArray(field="high", expected_ndim=1, dtype=np.float32)]
             + [AsNumpyArray(field="low", expected_ndim=1, dtype=np.float32)]
+            + [AsNumpyArray(field="close", expected_ndim=1, dtype=np.float32)]
             + [AsNumpyArray(field="volume", expected_ndim=1, dtype=np.float32)]
             + [AsNumpyArray(field="mu", expected_ndim=1, dtype=np.float32)]
             + [AsNumpyArray(field="sigma", expected_ndim=1, dtype=np.float32)]
@@ -109,6 +110,7 @@ def create_data_transformation(
                     "open",
                     "high",
                     "low",
+                    "close",
                     "volume",
                     "mu",
                     "sigma",

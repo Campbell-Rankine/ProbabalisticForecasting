@@ -99,13 +99,13 @@ def parse_cli() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "-s",
-        "--save",
-        dest="save_every",
-        metavar="save_every",
-        default=1000,
-        type=int,  # TODO: Implement functionality to load after iterations.
-        help="Number of iterations to run before saving the checkpoint (default : 70)",  # TODO: Write code that saves model to checkpoint: Forecaster-checkpoint-{epoch}.pth
+        "-d",
+        "--debug",
+        dest="debug",
+        metavar="debug",
+        default=False,
+        type=bool,  # TODO: Implement functionality to load after iterations.
+        help="Debug mode flag. (default : True)",  # TODO: Write code that saves model to checkpoint: Forecaster-checkpoint-{epoch}.pth
     )
 
     args = parser.parse_args()

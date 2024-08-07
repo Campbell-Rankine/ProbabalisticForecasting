@@ -1,7 +1,7 @@
 # WSL 2.0 docker image to run main.py. If using windows without WSL2.0 run git checkout -b windows:base
 
 # Use NVIDIA Triton Inference server for GPU acceleration
-FROM nvcr.io/nvidia/tritonserver:24.07-trtllm-python-py3 as base
+FROM nvcr.io/nvidia/tritonserver:24.07-trtllm-python-py3 AS base
 
 # pull NVIDIA container toolkit repo
 RUN curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
@@ -23,7 +23,7 @@ COPY ./requirements.txt ./requirements.txt
 RUN pip3 install -r requirements.txt
 
 # LOCAL BUILD LIBRARIES
-FROM base as dev
+FROM base AS dev
 
 # Copy local files
 COPY . .

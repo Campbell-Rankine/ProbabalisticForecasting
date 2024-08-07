@@ -41,7 +41,7 @@ one_year = (
 )
 
 save_loc = "./train/train_data.pickle"
-test_save_loc = "./test/test_data.pickle"
+test_save_loc = "./testing/test_data.pickle"
 
 
 def pull_ticker_data(ticker):
@@ -62,7 +62,35 @@ def pull_ticker_data(ticker):
         return None
 
 
-# feature creation functions for dataset
+def calculate_target_variable(data: dict, n: Optional[int] = -1):
+    """
+    Python generator to built the target variable from some df
+    Daily Returns = (CLOSE_T / CLOSE_(T-1)) - 1
+
+    Args:
+        data: pd.DataFrame - OHLC df for stock_i
+        n: int - data.shape[0] if converting to list. If operating over large or continuous dfs use -1
+    """
+    assert n <= len(data["close"]) and "close" in data.keys()
+    iterations: int = 0
+
+    if iterations == 0:
+        yield 0
+        prev_value: float = data["close"][0]
+        curr_value: float = data["close"][1]
+
+    match n:
+        case -1:
+            yield (curr_value / prev_value) - 1
+            prev_value = curr_value
+            iterations += 1
+            curr_value = data["close"][iterations]
+        case _:
+            while iterations < n - 1:
+                yield (curr_value / prev_value) - 1
+                prev_value = curr_value
+                iterations += 1
+                curr_value = data["close"][iterations]
 
 
 def flatten_stocks(data: dict[pd.DataFrame], limiter: Optional[int] = -1):
@@ -74,6 +102,7 @@ def flatten_stocks(data: dict[pd.DataFrame], limiter: Optional[int] = -1):
         "open": [],
         "high": [],
         "low": [],
+        "close": [],
         "target": [],
         "adjclose": [],
         "volume": [],
@@ -92,7 +121,7 @@ def flatten_stocks(data: dict[pd.DataFrame], limiter: Optional[int] = -1):
         return_dict["open"].extend(data_["open"])
         return_dict["high"].extend(data_["high"])
         return_dict["low"].extend(data_["low"])
-        return_dict["target"].extend(
+        return_dict["close"].extend(
             data_["close"]
         )  # TODO: Target, daily return (tomorrow and today's close). Extra feature. T_1 - T_N (not T_0)
         return_dict["adjclose"].extend(data_["adjclose"])
@@ -121,6 +150,11 @@ def flatten_stocks(data: dict[pd.DataFrame], limiter: Optional[int] = -1):
         # Add additional features here:
         return_dict["exponential-avg"].extend(ema)
         return_dict["delta-ema"].extend(list(np.array(data_["close"]) - np.array(ema)))
+        return_dict["target"].extend(
+            list(calculate_target_variable(data=data_, n=len(data_["close"])))
+        )
+
+        assert len(return_dict["target"]) == len(return_dict["close"])
 
     # add dim
     for key, val in return_dict.items():
@@ -135,7 +169,12 @@ if __name__ == "__main__":
     print("Running download script on %i cores" % workers)
     print(one_year)
 
+    # Alternate these two datasets epoch to epoch
     tickers = yf.tickers_nasdaq()
+    # tickers = yf.tickers_ftse250()
+    # tickers.extend(yf.tickers_sp500())
+    # tickers.extend(yd.tickers_dow())
+
     inds = np.random.uniform(
         0.0, len(tickers), len(tickers)
     )  # in the case where param 3 = len(tickers), get random shuffle of indices for nasdaq tickers

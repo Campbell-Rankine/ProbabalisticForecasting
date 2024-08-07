@@ -30,6 +30,12 @@ To run the script with default parameters use:
     python3 main.py
 ```
 
+To run the script with a subset (length=30) of the data. This functionality is mainly used for quick testing:
+```sh
+    python main.py --debug True
+    python3 main.py --debug True
+```
+
 To see a full list of command line arguments use:
 ```sh
     python main.py --help

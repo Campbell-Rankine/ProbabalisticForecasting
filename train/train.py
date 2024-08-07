@@ -65,6 +65,7 @@ def train_model(
     save_path: Optional[str] = "./weights/checkpoints/",
     checkpoint_dict=None,
     retest: Optional[bool] = False,
+    debug: Optional[bool] = False,
 ):
     message = f"Initializing model training conditions \n --------------------------- \n Using Tensorboard: {use_tb} \n Using Test Data: {use_test} \n Learning Rate: {hyperparams['lr']} \n Weight Decay: {hyperparams['weight_decay']} \n Betas: {hyperparams['betas']} \n Device: {device}"
     logging_handler(message, logger)
@@ -131,9 +132,10 @@ def train_model(
 
     data = []
     total_iters = 0
-    losses_avg = 0.0
-    iqr_avg = 0.0
-    grad_avg = 0.0
+    losses_sum = 0.0
+    iqr_sum = 0.0
+    grad_sum = 0.0
+    exit = False
 
     # build per epoch
 
@@ -190,6 +192,7 @@ def train_model(
             optim.step()
 
             # Write epoch data to tensorboard
+            grad_norm = None
             if epoch_num % 5 == 0 and not tbwriter is None:
                 grad_norm = model.get_grad_norm()
                 tbwriter.add_scalars(
@@ -203,18 +206,25 @@ def train_model(
                 tbwriter.add_scalar("Gradient Norm", grad_norm, (epoch_num + 1) * idx)
 
             # save training experiment data
-            data.append({"loss": loss.item(), "iqr": iqr, "grad": grad_norm})
-            losses.append(loss.item())
-            iqrs.append(iqr)
-            grads.append(grad_norm)
+            if total_iters % 100 == 0:
+                if grad_norm is None:
+                    grad_norm = model.get_grad_norm()
+                data.append({"loss": loss.item(), "iqr": iqr, "grad": grad_norm})
+                losses.append(loss.item())
+                iqrs.append(iqr)
+                grads.append(grad_norm)
+
+            if debug and idx > 30:
+                exit = True
+                break
 
         # Step LR scheduler
         sched.step()
 
         # get statistics for epoch
-        losses_avg += np.sum(np.abs(losses))  # add abs in case loss function includes -
-        iqr_avg += np.sum(np.abs(iqrs))
-        grad_avg += np.sum(np.abs(grads))
+        losses_sum += np.sum(np.abs(losses))  # add abs in case loss function includes -
+        iqr_sum += np.sum(np.abs(iqrs))
+        grad_sum += np.sum(np.abs(grads))
 
         # Save model weights to checkpoint. This will get overwritten in the next save.
         if save_every > -1 and epoch_num % save_every == 0:
@@ -231,13 +241,20 @@ def train_model(
 
             # save experiment csv
             records.send({"data": data})
-            records.send({"avg_loss": losses_avg / total_iters})
-            records.send({"avg_iqr": iqr_avg / total_iters})
-            records.send({"avg_grad_norm": grad_avg / total_iters})
-            records.send({"total_iters": total_iters})
-            records.send("SAVE")
+            records.send({"avg_loss": float(losses_sum / total_iters)})
+            records.send({"avg_iqr": float(iqr_sum / total_iters)})
+            records.send({"avg_grad_norm": float(grad_sum / total_iters)})
+            records.send({"total_iters": float(total_iters)})
+            try:
+                records.send({"SAVE": None})
+            except StopIteration:
+                print("Stop Iteration flag thrown")
 
             # clear mem
+        with open("./avg_epoch_losses.json", "w") as file:
+            import json
+
+            json.dump({str(epoch_num): np.mean(losses)}, file)
 
         # Handle Gradient memory for test case
         _ = test_fn(
@@ -253,13 +270,27 @@ def train_model(
             logger,
         )
 
+        if exit:
+            break
+
     # shutoff
-    records.send("SAVE")
-    out = records.send("STOP_CODE")
+    try:
+        records.send({"SAVE": None})
+    except StopIteration:
+        print("Stop Iteration flag thrown")
+    try:
+        _ = records.send({"STOP_CODE": None})
+    except StopIteration:
+        print("Stop Iteration flag thrown")
+
+    # close script
     print("TRAINING RUN FINISHED\n\n")
-    print(out)
     tbwriter.close()
 
     save_model_params(
         model=model, optimizer=optim, losses=losses, epoch=epoch_num, scheduler=sched
     )
+
+    import sys
+
+    sys.exit(0)

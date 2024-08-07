@@ -56,7 +56,7 @@ def main(args: argparse.Namespace):
         "freq": args.freq,
         "categorical": 1,
         "cardinality": len(train[0]["open"]),
-        "dynamic_real": 8,
+        "dynamic_real": 9,
     }
 
     model_params = {
@@ -128,6 +128,7 @@ def main(args: argparse.Namespace):
                 epochs=(int(args.epochs) - (checkpoint_dict["epoch"] + 1)),
                 checkpoint_dict=checkpoint_dict,
                 retest=args.retest,
+                debug=args.debug,
             )
         else:
             train_model(
@@ -141,6 +142,7 @@ def main(args: argparse.Namespace):
                 num_batches_per_epoch=batches_per_epoch,
                 epochs=int(args.epochs),
                 retest=args.retest,
+                debug=args.debug,
             )
     else:
         train_model(model, train_dl, test_dl, use_tb=True, batch_size=args.batch)
