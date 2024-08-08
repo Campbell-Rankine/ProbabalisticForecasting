@@ -20,7 +20,7 @@ from src.experiment_tracking import (
 from src.utils import load_data, convert_date_to_period, send_args_to_device
 from ProbabalisticForecaster import ProbForecaster
 from config import model_config, hyperparams
-from model_helpers import save_model_params, get_grad_l2_norm
+from model_helpers import save_model_params
 from src.plotting import gen_plot
 from testing.testing_script import test_fn
 
@@ -68,6 +68,7 @@ def train_model(
     debug: Optional[bool] = False,
     reg: Optional[float] = 1e-6,
     penalty: Optional[str] = "None",
+    k: Optional[int] = 1,
 ):
     message = f"Initializing model training conditions \n --------------------------- \n Using Tensorboard: {use_tb} \n Using Test Data: {use_test} \n Learning Rate: {hyperparams['lr']} \n Weight Decay: {hyperparams['weight_decay']} \n Betas: {hyperparams['betas']} \n Device: {device}"
     logging_handler(message, logger)
@@ -150,6 +151,7 @@ def train_model(
                 continue
 
         losses = []
+        window_loss = []
         iqrs = []
         grads = []
 
@@ -185,6 +187,9 @@ def train_model(
             outputs = model(args, idx, batch_size=batch_size)
             loss = outputs.loss
 
+            if not k == 1:
+                window_loss.append(loss)
+
             # add weight regularization penalty
             grad_penalty: float = 0.0
             match penalty:
@@ -197,12 +202,18 @@ def train_model(
             cpu_usage, mem_usage, gpu_usage = get_resource_usage()
 
             databar.set_description(
-                f"Epoch: {epoch_num}, Iteration: {idx} / {num_batches_per_epoch} | {round(100*(idx/num_batches_per_epoch), 2)}%, Loss: {round(loss.item(), 2)}, AVG Loss: {round(np.mean(np.abs(losses)), 2)}, IQR: {iqr}, Grad penalty: {round(grad_penalty, 3)}, CPU Usage: {cpu_usage}, Memory Usage: {mem_usage}, GPU Usage: {gpu_usage}"
+                f"Epoch: {epoch_num}, Iteration: {idx} / {num_batches_per_epoch} | {round(100*(idx/num_batches_per_epoch), 2)}%, Loss: {round(loss.item(), 2)}, Rolling AVG Loss: {round(np.mean([x.item() for x in window_loss]), 2)}, IQR: {round(iqr, 2)}, Grad penalty: {round(grad_penalty, 3)}, CPU Usage: {cpu_usage}, Memory Usage: {mem_usage}, GPU Usage: {gpu_usage}"
             )
 
             # backprop
-            accelerator.backward(loss)
-            optim.step()
+            if idx % k == 0 and not k == 1:
+                loss_ = (1 / k) * T.sum(T.tensor(window_loss, requires_grad=True))
+                accelerator.backward(loss_)
+                optim.step()
+                window_loss = []
+            else:
+                accelerator.backward(loss)
+                optim.step()
 
             # grad norm clipping
             if penalty == "None":
@@ -227,7 +238,6 @@ def train_model(
                 if grad_norm is None:
                     grad_norm = model.get_grad_norm()
                 data.append({"loss": loss.item(), "iqr": iqr, "grad": grad_norm})
-                losses.append(loss.item())
                 iqrs.append(iqr)
                 grads.append(grad_norm)
 

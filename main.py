@@ -130,6 +130,7 @@ def main(args: argparse.Namespace):
                 retest=args.retest,
                 debug=args.debug,
                 penalty=args.penalty,
+                k=args.backprop,
             )
         else:
             train_model(
@@ -145,6 +146,7 @@ def main(args: argparse.Namespace):
                 retest=args.retest,
                 debug=args.debug,
                 penalty=args.penalty,
+                k=args.backprop,
             )
     else:
         train_model(model, train_dl, test_dl, use_tb=True, batch_size=args.batch)

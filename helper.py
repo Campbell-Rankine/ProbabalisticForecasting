@@ -114,8 +114,18 @@ def parse_cli() -> argparse.Namespace:
         dest="penalty",
         metavar="penalty",
         default="None",
-        type=str,  # TODO: Implement functionality to load after iterations.
-        help="Debug mode flag. (default : 'None')",  # TODO: Write code that saves model to checkpoint: Forecaster-checkpoint-{epoch}.pth
+        type=str,
+        help="Debug mode flag. (default : 'None')",
+    )
+
+    parser.add_argument(
+        "-bk",
+        "--backprop",
+        dest="backprop",
+        metavar="backprop",
+        default=1,
+        type=int,
+        help="Skip backprop for k-iters. (default : 1(don't skip))",
     )
 
     args = parser.parse_args()

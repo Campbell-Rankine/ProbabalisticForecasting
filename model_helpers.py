@@ -43,11 +43,3 @@ def load_model_parameters(weight_loc: str) -> dict:
     """
     checkpoint_dict = T.load(weight_loc)
     return checkpoint_dict
-
-
-def get_grad_l2_norm(model):
-    total_norm: float = 0.0
-    for p in model.parameters():
-        param_norm = p.grad.data.norm(2)
-        total_norm += param_norm.item() ** 2
-    return total_norm**0.5
