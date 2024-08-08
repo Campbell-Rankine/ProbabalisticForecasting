@@ -53,7 +53,7 @@ def parse_cli() -> argparse.Namespace:
         "--batch",
         dest="batch",
         metavar="batch",
-        default=32,
+        default=24,
         type=int,
         help="Override context length",
     )
@@ -106,6 +106,16 @@ def parse_cli() -> argparse.Namespace:
         default=False,
         type=bool,  # TODO: Implement functionality to load after iterations.
         help="Debug mode flag. (default : True)",  # TODO: Write code that saves model to checkpoint: Forecaster-checkpoint-{epoch}.pth
+    )
+
+    parser.add_argument(
+        "-pen",
+        "--penalty",
+        dest="penalty",
+        metavar="penalty",
+        default="None",
+        type=str,  # TODO: Implement functionality to load after iterations.
+        help="Debug mode flag. (default : 'None')",  # TODO: Write code that saves model to checkpoint: Forecaster-checkpoint-{epoch}.pth
     )
 
     args = parser.parse_args()

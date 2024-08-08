@@ -20,7 +20,7 @@ from src.experiment_tracking import (
 from src.utils import load_data, convert_date_to_period, send_args_to_device
 from ProbabalisticForecaster import ProbForecaster
 from config import model_config, hyperparams
-from model_helpers import save_model_params
+from model_helpers import save_model_params, get_grad_l2_norm
 from src.plotting import gen_plot
 from testing.testing_script import test_fn
 
@@ -66,6 +66,8 @@ def train_model(
     checkpoint_dict=None,
     retest: Optional[bool] = False,
     debug: Optional[bool] = False,
+    reg: Optional[float] = 1e-6,
+    penalty: Optional[str] = "None",
 ):
     message = f"Initializing model training conditions \n --------------------------- \n Using Tensorboard: {use_tb} \n Using Test Data: {use_test} \n Learning Rate: {hyperparams['lr']} \n Weight Decay: {hyperparams['weight_decay']} \n Betas: {hyperparams['betas']} \n Device: {device}"
     logging_handler(message, logger)
@@ -83,7 +85,7 @@ def train_model(
             betas=hyperparams["betas"],
             weight_decay=hyperparams["weight_decay"],
         )
-        sched = ExponentialLR(optim, 0.9725)
+        sched = ExponentialLR(optim, 0.9975)
     else:
         optim = AdamW(
             model.parameters(),
@@ -91,12 +93,14 @@ def train_model(
             betas=hyperparams["betas"],
             weight_decay=hyperparams["weight_decay"],
         )
-        sched = ExponentialLR(optim, 0.9725)
+        sched = ExponentialLR(optim, 0.9975)
         optim.load_state_dict(checkpoint_dict["optimizer_state_dict"])
         sched.load_state_dict(checkpoint_dict["sched_state_dict"])
 
     # accelerate
-    model, optim, train_dl = accelerator.prepare(model, optim, train_dl)
+    model.transformer, optim, train_dl = accelerator.prepare(
+        model.transformer, optim, train_dl
+    )
 
     # lr scheduling
 
@@ -181,15 +185,28 @@ def train_model(
             outputs = model(args, idx, batch_size=batch_size)
             loss = outputs.loss
 
+            # add weight regularization penalty
+            grad_penalty: float = 0.0
+            match penalty:
+                case "L2":
+                    grad_penalty = reg * model.get_grad_norm()
+                case "L1":
+                    grad_penalty = reg * model.get_grad_norm(type="L1")
+            loss = loss + grad_penalty
+
             cpu_usage, mem_usage, gpu_usage = get_resource_usage()
 
             databar.set_description(
-                f"Epoch: {epoch_num}, Iteration: {idx} / {num_batches_per_epoch} | {round(100*(idx/num_batches_per_epoch), 2)}%, Loss: {loss}, IQR: {iqr}, CPU Usage: {cpu_usage}, Memory Usage: {mem_usage}, GPU Usage: {gpu_usage}"
+                f"Epoch: {epoch_num}, Iteration: {idx} / {num_batches_per_epoch} | {round(100*(idx/num_batches_per_epoch), 2)}%, Loss: {round(loss.item(), 2)}, AVG Loss: {round(np.mean(np.abs(losses)), 2)}, IQR: {iqr}, Grad penalty: {round(grad_penalty, 3)}, CPU Usage: {cpu_usage}, Memory Usage: {mem_usage}, GPU Usage: {gpu_usage}"
             )
 
             # backprop
             accelerator.backward(loss)
             optim.step()
+
+            # grad norm clipping
+            if penalty == "None":
+                T.nn.utils.clip_grad_norm_(model.transformer.parameters(), max_norm=6.0)
 
             # Write epoch data to tensorboard
             grad_norm = None
@@ -206,7 +223,7 @@ def train_model(
                 tbwriter.add_scalar("Gradient Norm", grad_norm, (epoch_num + 1) * idx)
 
             # save training experiment data
-            if total_iters % 100 == 0:
+            if total_iters % 10 == 0:
                 if grad_norm is None:
                     grad_norm = model.get_grad_norm()
                 data.append({"loss": loss.item(), "iqr": iqr, "grad": grad_norm})

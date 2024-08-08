@@ -129,6 +129,7 @@ def main(args: argparse.Namespace):
                 checkpoint_dict=checkpoint_dict,
                 retest=args.retest,
                 debug=args.debug,
+                penalty=args.penalty,
             )
         else:
             train_model(
@@ -143,6 +144,7 @@ def main(args: argparse.Namespace):
                 epochs=int(args.epochs),
                 retest=args.retest,
                 debug=args.debug,
+                penalty=args.penalty,
             )
     else:
         train_model(model, train_dl, test_dl, use_tb=True, batch_size=args.batch)

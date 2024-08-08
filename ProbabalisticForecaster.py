@@ -107,11 +107,14 @@ class ProbForecaster(nn.Module):
     def eval(self):
         self.transformer = self.transformer.eval()
 
-    def get_grad_norm(self):
+    def get_grad_norm(self, type: Optional[str] = "L2"):
         total_norm = 0.0
         for p in self.transformer.parameters():
             try:
-                param_norm = p.grad.detach().data.norm(2)
+                if type == "L2":
+                    param_norm = p.grad.detach().data.norm(2)
+                else:
+                    param_norm = p.grad.detach().data.norm(1)
                 total_norm += param_norm.item() ** 2
             except:
                 continue
