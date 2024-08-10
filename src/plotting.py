@@ -47,17 +47,37 @@ def gen_plot(
             np.mean(outputs[idx], axis=0),
             label="Prediction mean",
             color="purple",
-            alpha=0.3,
+            alpha=0.35,
         )
 
         plt.fill_between(
             list(range(30, 30 + prediction_length)),
             outputs[idx].mean(0) - (0.5 * outputs[idx].std(axis=0)),
             outputs[idx].mean(0) + (0.5 * outputs[idx].std(axis=0)),
+            color="red",
+            alpha=0.25,
+            interpolate=True,
+            label="+/- 0.5-std",
+        )
+
+        plt.fill_between(
+            list(range(30, 30 + prediction_length)),
+            outputs[idx].mean(0) - (1.0 * outputs[idx].std(axis=0)),
+            outputs[idx].mean(0) + (1.0 * outputs[idx].std(axis=0)),
             color="orange",
-            alpha=0.3,
+            alpha=0.2,
             interpolate=True,
             label="+/- 1-std",
+        )
+
+        plt.fill_between(
+            list(range(30, 30 + prediction_length)),
+            outputs[idx].mean(0) - (1.5 * outputs[idx].std(axis=0)),
+            outputs[idx].mean(0) + (1.5 * outputs[idx].std(axis=0)),
+            color="green",
+            alpha=0.1,
+            interpolate=True,
+            label="+/- 1.5-std",
         )
 
         plt.legend()
