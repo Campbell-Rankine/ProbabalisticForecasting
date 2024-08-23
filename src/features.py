@@ -7,7 +7,10 @@ import numpy as np
 from typing import Optional
 from tqdm import tqdm
 
-from .utils import load_data, load_from_disk
+try:
+    from src.utils import load_data, load_from_disk
+except:
+    from utils import load_data, load_from_disk
 
 
 def optional_trunc(stock_a: list[float], stock_b: list[float]):
