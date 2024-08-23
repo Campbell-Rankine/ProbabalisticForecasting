@@ -7,7 +7,7 @@ import numpy as np
 from typing import Optional
 from tqdm import tqdm
 
-from src.utils import load_data, load_from_disk
+from .utils import load_data, load_from_disk
 
 
 def optional_trunc(stock_a: list[float], stock_b: list[float]):
@@ -105,6 +105,9 @@ def map_stocks(
         )
 
     return pairs
+
+
+# TODO: Aarons feature. Just train this model and lets get this over with
 
 
 if __name__ == "__main__":

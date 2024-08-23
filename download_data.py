@@ -144,7 +144,6 @@ def flatten_stocks(data: dict[pd.DataFrame], limiter: Optional[int] = -1):
         ema = pd.DataFrame(data_["close"]).ewm(span=7).mean()
         ema = ema[ema.columns[0]].to_list()
 
-        logging.info(f"\nShape Comparison. EMA: {len(ema)}, DF: {len(data_['close'])}")
         assert len(ema) == len(data_["close"])
 
         # Add additional features here:
@@ -170,10 +169,9 @@ if __name__ == "__main__":
     print(one_year)
 
     # Alternate these two datasets epoch to epoch
-    tickers = yf.tickers_nasdaq()
-    # tickers = yf.tickers_ftse250()
-    # tickers.extend(yf.tickers_sp500())
-    # tickers.extend(yd.tickers_dow())
+    tickers = (
+        yf.tickers_nasdaq() + yf.tickers_dow() + yf.tickers_sp500()
+    )  # get as many as humanly possible
 
     inds = np.random.uniform(
         0.0, len(tickers), len(tickers)

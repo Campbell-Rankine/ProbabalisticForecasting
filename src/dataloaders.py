@@ -5,7 +5,7 @@ from gluonts.itertools import Cached, Cyclic
 from gluonts.dataset.loader import as_stacked_batches
 from transformers import PretrainedConfig
 
-from src.data_processing import create_data_transformation, create_instance_splitter
+from .data_processing import create_data_transformation, create_instance_splitter
 
 
 def create_train_dataloader(

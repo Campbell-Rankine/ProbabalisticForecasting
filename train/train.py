@@ -216,7 +216,7 @@ def train_model(
                 optim.step()
 
             # grad norm clipping
-            if penalty == "None":
+            if penalty == "None" and idx % (3 * k) == 0:
                 T.nn.utils.clip_grad_norm_(model.transformer.parameters(), max_norm=6.0)
 
             # Write epoch data to tensorboard
