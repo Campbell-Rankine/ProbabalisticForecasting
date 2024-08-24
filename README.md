@@ -5,7 +5,9 @@ An implementation of the Lag-Llama model with a GluonTS dataloader integration. 
 
 ### Downloading the data
 
-By default the data download script will run using the current date and will attempt to download 650 different tickers over a timespan of 2 years. Some basic data processing/filtering happens in this step including retrieving and building the start date, providing an integer categorical variable representing a ticker name, and retrieving the mean and standard deviation of the entire timeseries. Additionally stocks whose closing price has a standard deviation of less than 0.5 are filtered out as they were generally missing data or not worth predicting. To run the download script:
+**yf : yahoo_fin (PyPI)**
+
+Default tickers: yf.tickers_dow() + yf.tickers_sp500() + yf.tickers_nasdaq()
 
 ```sh
     python download_data.py
@@ -21,6 +23,7 @@ The environment to run the main.py script can be set up using the provided docke
 Once built, access the image terminal by running:
 ```sh
     docker run --gpus=all --rm -it prob_forecasting sh
+    docker run --gpus=1 --rm -it prob_forecasting sh
 ```
 
 
@@ -42,16 +45,26 @@ To see a full list of command line arguments use:
     python3 main.py --help
 ```
 
-### Tensorboard Logging
+### Model
 
-If you wish to monitor the training run, in a different terminal cd to the ProbabilisticForecasting directory. Next run the following command:
+<p style="align-center">See "Probabalistic_Transformers_Notes.pdf for model architecture.</p>
 
-```sh
-    tensorboard --logdir="./logging"
-```
+### TODO
 
-Tensorboard logging is supported for the following:
+    - [ ] Model trainer class
+    - [ ] Model analytics from experiment.json
+    - [ ] Finish training V1.0 (No mean reversion spread (A,B) feature) 
+    - [ ] Train V2.0 (mean reversion feature between tickers (A,B))
+    - [ ] Inference package
 
-- Gradient Norm: Scalar value representing the size of the loss functions gradient. Useful to monitor vanishing/exploding gradients.
-- Epoch Loss: For all epochs in the training run, graph the loss at each training step
-- Mean Epoch loss: Useful to watch the tendencies of the loss over the epoch.
+### Preliminary results
+
+<p style="align-center">Model output is a learned student-t distribution representing the daily returns for a stock ID'ed by ticker: t. Test data retrieved after every epoch, each band represents a 0.5 std tolerance increase. Prediction length: T+14days. Context Window: 92 days.</p>
+
+#### **Epoch 1**
+
+| | | |
+|:-------------------------:|:-------------------------:|:-------------------------:|
+|<img width="1604" alt="stock-4-epoch-0" src="resources/images/stock-4-epoch-0.png">  |  <img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-5-epoch-0.png">|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-10-epoch-0.png">|
+|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-11-epoch-0.png">  |  <img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-14-epoch-0.png">|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-17-epoch-0.png">|
+|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-18-epoch-0.png">  |  <img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-20-epoch-0.png">|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-21-epoch-0.png">|

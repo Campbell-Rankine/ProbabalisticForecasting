@@ -32,7 +32,7 @@ def gen_plot(
             batch["future_values"][idx],
             label="future close",
             color="red",
-            alpha="0.4",
+            alpha=0.4,
         )
 
         plt.plot(

@@ -56,7 +56,7 @@ def get_best_pair(
     a_data = data[data[identifier] == stock_id]
     a_close = a_data["close"]
     stock_list_ = [x for x in stock_list if not x == stock_id]
-
+ 
     best = {"value": -1, "id": ""}
 
     # length check
