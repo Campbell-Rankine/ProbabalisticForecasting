@@ -61,10 +61,10 @@ To see a full list of command line arguments use:
 
 <p style="align-center">Model output is a learned student-t distribution representing the daily returns for a stock ID'ed by ticker: t. Test data retrieved after every epoch, each band represents a 0.5 std tolerance increase. Prediction length: T+14days. Context Window: 92 days.</p>
 
-#### **Epoch 1**
+#### **Epoch 3**
 
 | | | |
 |:-------------------------:|:-------------------------:|:-------------------------:|
-|<img width="1604" alt="stock-4-epoch-0" src="resources/images/stock-4-epoch-0.png">  |  <img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-5-epoch-0.png">|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-10-epoch-0.png">|
-|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-11-epoch-0.png">  |  <img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-14-epoch-0.png">|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-17-epoch-0.png">|
-|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-18-epoch-0.png">  |  <img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-20-epoch-0.png">|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-21-epoch-0.png">|
+|<img width="1604" alt="stock-4-epoch-0" src="resources/images/stock-4-epoch-2.png">  |  <img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-5-epoch-2.png">|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-10-epoch-2.png">|
+|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-11-epoch-2.png">  |  <img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-14-epoch-2.png">|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-17-epoch-2.png">|
+|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-18-epoch-2.png">  |  <img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-20-epoch-2.png">|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-21-epoch-2.png">|

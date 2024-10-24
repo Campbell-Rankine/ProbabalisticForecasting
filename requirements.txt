@@ -5,7 +5,7 @@ datasets
 accelerate
 ujson
 tensorboard
-torch==2.2.2
+torch==2.5.0
 yahoo_fin
 tqdm
 matplotlib

@@ -161,6 +161,10 @@ def train_model(
             model.transformer.zero_grad()
 
         for idx, batch in enumerate(train_dl):
+            print(list(batch.keys()), batch)
+            assert False
+            print("past_values", batch["past_values"].shape)
+            print("past_time_features", batch["past_values"].shape)
             total_iters += 1
             # normalize the input according to xi-median / IQR ()
             q75, q25 = np.percentile(batch["past_values"].cpu().numpy(), [75, 25])

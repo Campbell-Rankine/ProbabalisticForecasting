@@ -53,8 +53,10 @@ def pull_ticker_data(ticker):
         if np.std(data["close"]) <= 0.7:
             return None
 
-        data["mu"] = np.mean(data["open"]) * np.ones_like(data["open"].to_numpy())
-        data["sigma"] = np.std(data["open"]) * np.ones_like(data["open"].to_numpy())
+        data["mu"] = np.mean(data["open"][:92]) * np.ones_like(data["open"].to_numpy())
+        data["sigma"] = np.std(data["open"][:92]) * np.ones_like(
+            data["open"].to_numpy()
+        )
         data = data.to_dict(orient="list")
         return (ticker, data)
     except Exception as e:
@@ -189,8 +191,8 @@ if __name__ == "__main__":
     list_dfs = list(filter(lambda item: item is not None, list_dfs))
 
     # Train test inf splitting
-    train = list_dfs[: len(list_dfs) - 300]
-    test = list_dfs[len(list_dfs) - 300 :]
+    train = list_dfs[: len(list_dfs)]
+    test = list_dfs[len(list_dfs) :]
 
     download_end = timer()
     print(f"Downloading ticker data took: {round(download_end - download_start, 2)} s")

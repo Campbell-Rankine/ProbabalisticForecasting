@@ -128,6 +128,16 @@ def parse_cli() -> argparse.Namespace:
         help="Skip backprop for k-iters. (default : 1(don't skip))",
     )
 
+    parser.add_argument(
+        "-a",
+        "--accelerator",
+        dest="acc",
+        metavar="device",
+        default="gpu",
+        type=str,
+        help="Lightning device. (default : 1(don't skip))",
+    )
+
     args = parser.parse_args()
     return args
 
