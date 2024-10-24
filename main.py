@@ -107,7 +107,7 @@ def main(args: argparse.Namespace):
     test_dl = create_train_dataloader(
         config=model.config,
         freq=args.freq,
-        data=test,
+        data=train,
         batch_size=args.batch,
         num_batches_per_epoch=10,  # consider this NUM_RETRIES
     )
