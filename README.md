@@ -70,3 +70,12 @@ To see a full list of command line arguments use:
 |<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-16-epoch-0.png">  |  <img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-19-epoch-0.png">|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-20-epoch-0.png">|
 
 Training restarted after variance past future information to the train set.
+
+#### **Epoch 4**
+
+| | | |
+|:-------------------------:|:-------------------------:|:-------------------------:|
+|<img width="1604" alt="stock-4-epoch-0" src="resources/images/stock-0-epoch-0 copy.png">  |  <img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-4-epoch-0 copy.png">|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-5-epoch-0 copy.png">|
+|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-10-epoch-0 copy.png">  |  <img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-11-epoch-0 copy.png">|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-15-epoch-0 copy.png">|
+|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-16-epoch-0 copy.png">  |  <img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-19-epoch-0 copy.png">|<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="resources/images/stock-20-epoch-0 copy.png">|
+
